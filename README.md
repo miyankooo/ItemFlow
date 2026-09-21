@@ -1,24 +1,19 @@
 # FastLootSellRepair
 
-Instant auto-loot, automatic junk selling and automatic repairs for **WoW Forever 1.60.x** (Interface `16001`).
+Three vendor and looting chores handled for you: instant looting, junk selling and gear repair. No configuration needed.
 
-Three chores, no clicks, no configuration needed. Three Lua files, no libraries.
+## Features
 
-## What it does
+- **Instant looting** — loots every slot the moment loot is ready, before the loot window opens. Slots your group is rolling on are left alone.
+- **Junk selling** — sells all grey items when you open a vendor, without the confirmation popup.
+- **Gear repair** — repairs when you open a repair vendor and reports the cost. A repair you could not afford on arrival is retried once your junk money lands.
+- **Optional bind-on-pickup confirm** — auto-confirms BoP prompts while solo.
 
-**Instant looting** — loots every slot on `LOOT_READY`, before the loot window has a chance to open. This is the auto-loot behaviour of [SpeedyAutoLoot](https://www.curseforge.com/wow/addons/speedy-autoloot) reduced to its core. Slots the group is rolling on are left alone, so nothing is decided for your party.
+## Installation
 
-**Junk selling** — calls `C_MerchantFrame.SellAllJunkItems()` when you open a vendor, the same API behind Blizzard's own sell-all-junk button, minus the confirmation popup. If the client hides that button, it falls back to selling grey items out of your bags.
-
-**Repairing** — calls `RepairAllItems()` when you open a repair vendor, and reports the cost. Guild bank funds are off by default. Because selling pays out a moment after the vendor opens, a repair you could not afford on arrival is retried once the money lands.
-
-## Install
-
-Drop the `FastLootSellRepair` folder into:
-
-```
-World of Warcraft/_classic_beta_/Interface/AddOns/
-```
+1. Copy the `FastLootSellRepair/` folder into `World of Warcraft/_classic_beta_/Interface/AddOns/`.
+2. Restart the game or `/reload`.
+3. Enable **Fast Loot Sell Repair** in the AddOns list.
 
 ## Commands
 
@@ -32,12 +27,12 @@ World of Warcraft/_classic_beta_/Interface/AddOns/
 | `repairgear` | on | Repair when a repair vendor opens |
 | `guildrepair` | off | Pay repairs from guild bank funds when allowed |
 
-Settings are per account (`FastLootSellRepairDB`).
+Settings are saved per account.
 
-## Compatibility
+## Requirements
 
-Written against build 1.60.1 and verified against the `forever` branch of [Gethe/wow-ui-source](https://github.com/Gethe/wow-ui-source). Every API it uses was confirmed present in the shipped 1.60.1 client. It has not yet been run in game.
+WoW Forever 1.60.x (Interface `16001`). Written against build 1.60.1 and not yet run in game.
 
-## Licence
+## License
 
 MIT
