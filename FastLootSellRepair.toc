@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: Fast Loot Sell Repair
+## Notes: Instant auto-loot, automatic junk selling and automatic repairs at any vendor.
+## Author: miyanko
+## Version: 1.0.0
+## IconTexture: Interface\Icons\INV_Misc_Bag_10
+## SavedVariables: FastLootSellRepairDB
+## X-Category: Loot
+
+Core\Config.lua
+Core\Loot.lua
+Core\Vendor.lua
