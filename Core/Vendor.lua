@@ -1,5 +1,11 @@
 local _, ns = ...
 
+-- Only 1.60 ships Blizzard's sell-all-junk API. 1.15 has no C_MerchantFrame junk calls, so it always sells from the bags.
+local hasJunkApi = C_MerchantFrame ~= nil and C_MerchantFrame.IsSellAllJunkEnabled ~= nil
+
+-- 1.60 adds the reagent bag to this total. 1.15 has no reagent bag and defines only NUM_BAG_SLOTS.
+local LAST_BAG = NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS
+
 -- Mirrors MerchantSellAllJunkButton, minus the confirmation popup.
 local function SellJunkNatively()
   if C_MerchantFrame.GetNumJunkItems() > 0 then
@@ -7,9 +13,9 @@ local function SellJunkNatively()
   end
 end
 
--- Used only when the client hides the sell-all-junk button, which it decides per game type.
+-- Used on 1.15, and on 1.60 whenever the client hides the sell-all-junk button, which it decides per game type.
 local function SellJunkFromBags()
-  for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
+  for bag = BACKPACK_CONTAINER, LAST_BAG do
     for slot = 1, C_Container.GetContainerNumSlots(bag) do
       local info = C_Container.GetContainerItemInfo(bag, slot)
       if info and info.quality == Enum.ItemQuality.Poor and not info.hasNoValue and not info.isLocked then
@@ -24,7 +30,7 @@ local function SellJunk()
     return
   end
 
-  if C_MerchantFrame.IsSellAllJunkEnabled() then
+  if hasJunkApi and C_MerchantFrame.IsSellAllJunkEnabled() then
     SellJunkNatively()
   else
     SellJunkFromBags()
