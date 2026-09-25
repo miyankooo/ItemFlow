@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 11509, 16001
 ## Title: Fast Loot Sell Repair
 ## Notes: Instant auto-loot, automatic junk selling and automatic repairs at any vendor.
 ## Author: miyanko
