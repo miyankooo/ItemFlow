@@ -22,8 +22,10 @@ local KEYS = { "fastLoot", "confirmBop", "sellJunk", "repairGear", "guildRepair"
 -- Modules read this table lazily, so it is safe that it stays empty until ADDON_LOADED.
 ns.db = {}
 
+local PREFIX = YELLOW_FONT_COLOR:WrapTextInColorCode("[Fast Loot Sell Repair]:") .. " "
+
 function ns.Print(message)
-  print("|cff58C6FAFLSR|r " .. message)
+  print(PREFIX .. message)
 end
 
 local function LoadSettings()
@@ -37,13 +39,13 @@ local function LoadSettings()
 end
 
 local function StateText(key)
-  return ns.db[key] and "|cff37DB33on|r" or "|cffB6B6B6off|r"
+  return ns.db[key] and GREEN_FONT_COLOR:WrapTextInColorCode("on") or GRAY_FONT_COLOR:WrapTextInColorCode("off")
 end
 
 local function PrintStatus()
   ns.Print("toggle a setting with /flsr <name>")
   for _, key in ipairs(KEYS) do
-    ns.Print(("  |cffFFC700%s|r %s - %s"):format(key:lower(), StateText(key), LABELS[key]))
+    ns.Print(("  %s %s - %s"):format(NORMAL_FONT_COLOR:WrapTextInColorCode(key:lower()), StateText(key), LABELS[key]))
   end
 end
 
