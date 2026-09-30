@@ -3,15 +3,12 @@ local _, ns = ...
 -- Above every real item quality, so "nothing is contested" needs no special case.
 local QUALITY_CAP = 10
 
--- Loot methods that roll contested items instead of handing them out. Built at load
--- because 1.60 may not expose every member Blizzard defines on retail.
-local ROLL_METHODS = {}
-for _, name in ipairs({ "Group", "Needbeforegreed", "Masterlooter" }) do
-  local method = Enum.LootMethod[name]
-  if method then
-    ROLL_METHODS[method] = true
-  end
-end
+-- Loot methods that roll contested items instead of handing them out.
+local ROLL_METHODS = {
+  [Enum.LootMethod.Group] = true,
+  [Enum.LootMethod.Needbeforegreed] = true,
+  [Enum.LootMethod.Masterlooter] = true,
+}
 
 -- Looting a slot the group is rolling on would decide the roll for everyone.
 local function RollThreshold()
