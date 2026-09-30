@@ -36,6 +36,7 @@ The Forever merchant frame shows its sell-all-junk button only when `C_MerchantF
 - FLSR-5: `## Category: Inventory` replaces `## X-Category: Loot`.
 - FLSR-7: the README is Forever only.
 - FLSR-8: `1.15.x-backup` was created at `bf6fe44` and pushed.
+- Chat output (owner decision 2026-09-30): the shared yellow `[Fast Loot Sell Repair]:` prefix from `YELLOW_FONT_COLOR`, and names and on/off states coloured with `NORMAL_FONT_COLOR`, `GREEN_FONT_COLOR` and `GRAY_FONT_COLOR`. No hex colour codes remain.
 
 Still open:
 
