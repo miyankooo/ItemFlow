@@ -11,7 +11,7 @@ Three vendor and looting chores handled for you: instant looting, junk selling a
 
 ## Installation
 
-1. Copy the `FastLootSellRepair/` folder into the `Interface/AddOns/` folder of your client: `_classic_era_` for Classic Era, `_classic_beta_` for the WoW Forever beta.
+1. Copy the `FastLootSellRepair/` folder into the `Interface/AddOns/` folder of your WoW Forever install.
 2. Restart the game or `/reload`.
 3. Enable **Fast Loot Sell Repair** in the AddOns list.
 
@@ -31,12 +31,6 @@ Settings are saved per account.
 
 ## Requirements
 
-One folder runs on both clients:
+WoW Forever 1.60.x (`## Interface: 16001`). Junk sells through Blizzard's sell-all-junk when the client offers it, and from your bags otherwise. Not yet run in game.
 
-| Client | Interface | Junk selling |
-| --- | --- | --- |
-| Classic Era 1.15.x | `11509` | Sells grey items from your bags |
-| WoW Forever 1.60.x | `16001` | Uses Blizzard's sell-all-junk, bags as fallback |
-
-Written against builds 1.15.9 and 1.60.1 and not yet run in game.
-
+The Classic Era 1.15.x version lives on the `1.15.x-backup` branch.
