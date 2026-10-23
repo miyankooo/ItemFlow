@@ -1,63 +1,35 @@
 local addonName, ns = ...
 
-local DEFAULTS = {
-  fastLoot = true,
-  confirmBop = false,
-  sellJunk = true,
-  repairGear = true,
-  guildRepair = false,
-}
+ns.title = C_AddOns.GetAddOnMetadata(addonName, "Title")
 
-local LABELS = {
-  fastLoot = "Instant looting",
-  confirmBop = "Auto-confirm bind-on-pickup while solo",
-  sellJunk = "Sell junk at vendors",
-  repairGear = "Repair at vendors",
-  guildRepair = "Repair from guild bank funds",
+-- One ordered list feeds the saved defaults and the settings page. A row with a parent greys out while that setting is off. onChange runs after the setting is saved.
+ns.SETTINGS = {
+  { key = "fastLoot", default = true, label = "Fast Loot", tooltip = "Takes every item at once without showing the loot window. Needs Auto Loot on (Options, Controls), or hold the Auto Loot key.", onChange = function() ns.ApplyFastLoot() end },
+  { key = "confirmBop", default = false, label = "Confirm Bind on Pickup", tooltip = "Confirms bind on pickup loot for you while you play solo. In a group you still decide.", onChange = function() ns.ApplyBindPopup() end },
+  { key = "sellJunk", default = true, label = "Sell Junk", tooltip = "Sells your grey items when you open a vendor." },
+  { key = "repairGear", default = true, label = "Repair Gear", tooltip = "Repairs your gear when you open a vendor who can repair." },
+  { key = "guildRepair", default = false, label = "Guild Repair", tooltip = "Pays repairs from guild bank funds when your guild allows it. Your own money covers the rest.", parent = "repairGear" },
+  { key = "buyMaxStack", default = false, label = "Buy Max Stack", tooltip = "Right-clicking an item at a vendor buys a full stack. The vendor window has the same checkbox." },
+  { key = "highlightCheapest", default = true, label = "Highlight Cheapest Item", tooltip = "Makes the stack in your bags worth the least glow, by the lower of its vendor and Auctionator price, so you see what to sell or destroy first.", onChange = function() ns.RefreshBagGlow() end },
 }
-
--- Fixed order so the status listing stays stable across sessions.
-local KEYS = { "fastLoot", "confirmBop", "sellJunk", "repairGear", "guildRepair" }
 
 -- Modules read this table lazily, so it is safe that it stays empty until ADDON_LOADED.
 ns.db = {}
 
-local PREFIX = YELLOW_FONT_COLOR:WrapTextInColorCode("[Fast Loot Sell Repair]:") .. " "
+local PREFIX = YELLOW_FONT_COLOR:WrapTextInColorCode("[" .. ns.title .. "]:") .. " "
 
 function ns.Print(message)
   print(PREFIX .. message)
 end
 
 local function LoadSettings()
-  FastLootSellRepairDB = FastLootSellRepairDB or {}
-  for key, value in pairs(DEFAULTS) do
-    if FastLootSellRepairDB[key] == nil then
-      FastLootSellRepairDB[key] = value
+  ItemFlowDB = ItemFlowDB or {}
+  for _, entry in ipairs(ns.SETTINGS) do
+    if ItemFlowDB[entry.key] == nil then
+      ItemFlowDB[entry.key] = entry.default
     end
   end
-  ns.db = FastLootSellRepairDB
-end
-
-local function StateText(key)
-  return ns.db[key] and GREEN_FONT_COLOR:WrapTextInColorCode("on") or GRAY_FONT_COLOR:WrapTextInColorCode("off")
-end
-
-local function PrintStatus()
-  ns.Print("toggle a setting with /flsr <name>")
-  for _, key in ipairs(KEYS) do
-    ns.Print(("  %s %s - %s"):format(NORMAL_FONT_COLOR:WrapTextInColorCode(key:lower()), StateText(key), LABELS[key]))
-  end
-end
-
-local function ToggleSetting(name)
-  for _, key in ipairs(KEYS) do
-    if key:lower() == name then
-      ns.db[key] = not ns.db[key]
-      ns.Print(LABELS[key] .. " " .. StateText(key))
-      return true
-    end
-  end
-  return false
+  ns.db = ItemFlowDB
 end
 
 local configFrame = CreateFrame("Frame")
@@ -68,10 +40,3 @@ configFrame:SetScript("OnEvent", function(self, _, loadedAddon)
     self:UnregisterEvent("ADDON_LOADED")
   end
 end)
-
-SLASH_FASTLOOTSELLREPAIR1, SLASH_FASTLOOTSELLREPAIR2 = "/flsr", "/fastlootsellrepair"
-function SlashCmdList.FASTLOOTSELLREPAIR(input)
-  if not ToggleSetting(strtrim(input or ""):lower()) then
-    PrintStatus()
-  end
-end
