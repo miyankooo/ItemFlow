@@ -8,9 +8,9 @@
 
 ## Rules
 
-- Looting follows SpeedyAutoLoot by Yuyuli. `LootFrame` lives under a hidden parent from 5 s after login and after every `LOOT_CLOSED`, and comes back to UIParent only for manual loot, a slot left behind (roll threshold, lock, no bag room), a stuck error or a bind prompt. An empty or repeated `LOOT_READY` returns early, so a spammed interact never draws the window.
+- Looting follows SpeedyAutoLoot by Yuyuli. `LootFrame` lives under a hidden parent from 5 s after login and after every `LOOT_CLOSED`, and comes back to UIParent only for manual loot, a slot left behind (lock, no bag room), a stuck error or a bind prompt. An empty or repeated `LOOT_READY` returns early, so a spammed interact never draws the window.
 - The first `LOOT_READY` of a loot decides auto loot, with SpeedyAutoLoot's fallback `GetCVarBool("autoLootDefault") ~= IsModifiedClick("AUTOLOOTTOGGLE")`, because a spammed interact can flip the payload.
-- Slots loot last first, one per 0.033 s ticker step, after SpeedyAutoLoot's bag room check. Blizzard's own `LOOT_OPENED` handler plays the fishing sound while the window is parked, so the addon plays none.
+- Slots loot last first, one per 0.033 s ticker step, after SpeedyAutoLoot's bag room check, which lets only crafting reagents into the reagent bag. Quality never holds a slot back, also in a group: SpeedyAutoLoot ships `X-Family: [Family]` unreplaced, so its Classic-only roll threshold never runs on Forever, and the owner wants the same (2026-10-23). Blizzard's own `LOOT_OPENED` handler plays the fishing sound while the window is parked, so the addon plays none.
 - With Fast Loot off the window stays on UIParent and the addon does not loot.
 - Confirm Bind on Pickup while solo unregisters `LOOT_BIND_CONFIRM` from UIParent so Blizzard's popup never flashes, and registers it again in a group or when the setting is off.
 - Buy Max Stack post-hooks the global `MerchantItemButton_OnClick`, which the merchant buttons call by name, and tops Blizzard's one purchase up with `BuyMerchantItem` within `GetMerchantItemMaxStack`, money, supply and whole bundles. Items Blizzard confirms first are left alone.
