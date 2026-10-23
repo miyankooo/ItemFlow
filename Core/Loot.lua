@@ -4,16 +4,6 @@ local _, ns = ...
 -- hidden parent, so every loot opens invisibly, and the window comes back to UIParent only when the player has
 -- to act. An empty loot from a spammed interact never reaches that point, so it never draws.
 
--- Above every real item quality, so "nothing is contested" needs no special case.
-local QUALITY_CAP = 10
-
--- Loot methods that roll contested items instead of handing them out.
-local ROLL_METHODS = {
-  [Enum.LootMethod.Group] = true,
-  [Enum.LootMethod.Needbeforegreed] = true,
-  [Enum.LootMethod.Masterlooter] = true,
-}
-
 -- Errors that leave an item behind, so the player has to see the window.
 local STUCK_ERRORS = {
   [ERR_INV_FULL] = true,
@@ -35,7 +25,6 @@ hiddenParent:Hide()
 local hasEditMode = type(LootFrame.UpdateShownState) == "function"
 
 local isLooting, isHidden, lastNumLoot, lootFailure, initialAutoLoot, lootTicker = false, true, nil, false, false, nil
-local lootThreshold = QUALITY_CAP
 
 -- A loot replacement that took LOOT_OPENED from Blizzard's window owns it, so the window is left alone.
 local function OwnsLootFrame()
@@ -84,9 +73,10 @@ local function ParkLootFrame()
   LootFrame:SetParent(ns.db.fastLoot and hiddenParent or UIParent)
 end
 
--- True when the item has room: the keyring, a stack it tops up or a free slot in a bag that takes its family.
+-- True when the item has room: the keyring, a stack it tops up, the reagent bag for a crafting reagent or a free
+-- slot in a bag that takes its family.
 local function ItemFits(itemLink, quantity)
-  local stackCount = select(8, C_Item.GetItemInfo(itemLink))
+  local stackCount, _, _, _, _, _, _, _, _, isCraftingReagent = select(8, C_Item.GetItemInfo(itemLink))
   local itemFamily = C_Item.GetItemFamily(itemLink)
 
   if itemFamily == KEY_FAMILY then
@@ -102,8 +92,12 @@ local function ItemFits(itemLink, quantity)
 
   for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS do
     local freeSlots, bagFamily = C_Container.GetContainerNumFreeSlots(bag)
-    if freeSlots > 0 and (not bagFamily or bagFamily == 0 or (itemFamily and bit.band(itemFamily, bagFamily) > 0)) then
-      return true
+    if freeSlots > 0 then
+      if bag == Enum.BagIndex.ReagentBag then
+        if isCraftingReagent then return true end
+      elseif not bagFamily or bagFamily == 0 or (itemFamily and bit.band(itemFamily, bagFamily) > 0) then
+        return true
+      end
     end
   end
   return false
@@ -114,15 +108,14 @@ local function ConfirmsBind()
   return ns.db.confirmBop and not (GetNumGroupMembers() > 1)
 end
 
--- False when the slot stays behind: rolled on, locked or without room.
+-- False when the slot stays behind: locked or without room. Quality never holds a slot back, as in SpeedyAutoLoot
+-- on Forever, whose group roll threshold only runs on Classic clients.
 local function LootOneSlot(slot)
   local slotType = GetLootSlotType(slot)
   if slotType == Enum.LootSlotType.None then return true end
 
-  local quantity, _, quality, locked = select(3, GetLootSlotInfo(slot))
-  if locked or (quality and quality >= lootThreshold) then
-    return false
-  end
+  local quantity, _, _, locked = select(3, GetLootSlotInfo(slot))
+  if locked then return false end
   if slotType ~= Enum.LootSlotType.Item or ItemFits(GetLootSlotLink(slot), quantity) then
     LootSlot(slot)
     if ConfirmsBind() then ConfirmLootSlot(slot) end
@@ -166,9 +159,6 @@ local function OnLootReady(isAutoLoot)
   if numItems == 0 or numItems == lastNumLoot then return end
 
   if initialAutoLoot then
-    -- Looting a slot the group is rolling on would decide the roll for everyone.
-    local rolls = IsInGroup() and ROLL_METHODS[C_PartyInfo.GetLootMethod()]
-    lootThreshold = rolls and GetLootThreshold() or QUALITY_CAP
     StartLooting(numItems)
   else
     ShowLootFrame()

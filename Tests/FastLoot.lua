@@ -31,12 +31,11 @@ local function Reset(opts)
   handlers, tickers, timers = {}, {}, {}
 
   Enum = {
-    LootMethod = { Masterlooter = 2, Group = 3, Needbeforegreed = 4 },
     LootSlotType = { None = 0, Item = 1 },
-    BagIndex = { Keyring = -1 },
+    BagIndex = { Keyring = -1, ReagentBag = 5 },
   }
   ERR_INV_FULL, ERR_ITEM_MAX_COUNT, ERR_LOOT_ROLL_PENDING = "full", "max", "rolling"
-  BACKPACK_CONTAINER, NUM_BAG_SLOTS = 0, 4
+  BACKPACK_CONTAINER, NUM_BAG_SLOTS, NUM_TOTAL_EQUIPPED_BAG_SLOTS = 0, 4, 5
 
   UIParent = NewFrame(nil, true)
   UIParent.events.LOOT_BIND_CONFIRM = true
@@ -56,10 +55,7 @@ local function Reset(opts)
   }
   EventUtil = { ContinueOnPlayerLogin = function(fn) loginCallback = fn end }
 
-  IsInGroup = function() return opts.group or false end
   GetNumGroupMembers = function() return opts.group and 5 or 1 end
-  C_PartyInfo = { GetLootMethod = function() return 3 end }
-  GetLootThreshold = function() return 2 end
   GetCVarBool = function(cvar)
     if cvar == "lootUnderMouse" then return true end
     return opts.autoLootDefault ~= false
@@ -78,11 +74,18 @@ local function Reset(opts)
   ConfirmLootSlot = function() state.confirmed = state.confirmed + 1 end
 
   C_Item = {
-    GetItemInfo = function() return nil, nil, nil, nil, nil, nil, nil, 20 end,
+    GetItemInfo = function()
+      return nil, nil, nil, nil, nil, nil, nil, 20, nil, nil, nil, nil, nil, nil, nil, nil, opts.reagent or false
+    end,
     GetItemFamily = function() return 0 end,
     GetItemCount = function() return 0 end,
   }
-  C_Container = { GetContainerNumFreeSlots = function() return opts.bagsFull and 0 or 10, 0 end }
+  C_Container = {
+    GetContainerNumFreeSlots = function(bag)
+      local full = opts.bagsFull or (opts.onlyReagentBag and bag ~= Enum.BagIndex.ReagentBag)
+      return full and 0 or 10, 0
+    end,
+  }
   C_ActionBar = {}
 
   local ns = { db = { fastLoot = opts.fastLoot ~= false, confirmBop = opts.confirmBop or false } }
@@ -153,13 +156,13 @@ Fire("LOOT_READY", false)
 Fire("LOOT_OPENED", false)
 Check("manual: the window shows", state.drawn and #state.looted == 0)
 
--- A rolled or locked slot stays behind and the window shows at the end.
+-- In a group quality holds nothing back, as in SpeedyAutoLoot on Forever. A locked slot stays and shows the window.
 Reset({ group = true, slots = { {}, { quality = 3 }, { locked = true } } })
 Fire("LOOT_READY", true)
 Fire("LOOT_OPENED", true)
 Tick()
-Check("contested: only the free slot looted", #state.looted == 1 and state.looted[1] == 1)
-Check("contested: the window shows", state.drawn)
+Check("group: every unlocked slot looted", #state.looted == 2 and state.looted[1] == 2 and state.looted[2] == 1)
+Check("group: the window shows for the locked slot", state.drawn)
 
 -- Full bags: nothing fits, so nothing is looted and the window shows.
 Reset({ bagsFull = true })
@@ -167,6 +170,18 @@ Fire("LOOT_READY", true)
 Fire("LOOT_OPENED", true)
 Tick()
 Check("full bags: the window shows", #state.looted == 0 and state.drawn)
+
+-- Only the reagent bag has room: it takes a crafting reagent and nothing else.
+Reset({ onlyReagentBag = true, slots = { {} } })
+Fire("LOOT_READY", true)
+Fire("LOOT_OPENED", true)
+Tick()
+Check("reagent bag: other items stay behind", #state.looted == 0 and state.drawn)
+Reset({ onlyReagentBag = true, reagent = true, slots = { {} } })
+Fire("LOOT_READY", true)
+Fire("LOOT_OPENED", true)
+Tick()
+Check("reagent bag: a reagent is looted", #state.looted == 1 and not state.drawn)
 
 -- An inventory error during a hidden loot shows the window.
 Reset({})
