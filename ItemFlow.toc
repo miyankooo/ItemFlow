@@ -1,0 +1,22 @@
+## Interface: 16001
+## Title: ItemFlow
+## Notes: Loots everything at once, sells junk, repairs, buys full stacks and marks your cheapest item.
+## Author: miyanko
+## Version: 1.0.0
+## Category: Inventory
+## IconTexture: Interface\Icons\INV_Misc_Bag_10
+## SavedVariables: ItemFlowDB
+## OptionalDeps: Auctionator
+## AddonCompartmentFunc: ItemFlow_CompartmentClick
+## AddonCompartmentFuncOnEnter: ItemFlow_CompartmentEnter
+## AddonCompartmentFuncOnLeave: ItemFlow_CompartmentLeave
+
+# Load order is the dependency order: Config owns the saved settings, then each feature module, and Options
+# builds the settings page, the slash command and the addon-menu entry on top of them.
+
+Core\Config.lua
+Core\Loot.lua
+Core\Vendor.lua
+Core\Buy.lua
+Core\Bags.lua
+UI\Options.lua

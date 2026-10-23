@@ -1,36 +1,61 @@
-# FastLootSellRepair
+# ItemFlow
 
-Three vendor and looting chores handled for you: instant looting, junk selling and gear repair. No configuration needed.
+Loots everything at once, sells your junk and repairs your gear at vendors, buys full stacks with a right-click and marks the cheapest item in your bags.
 
 ## Features
 
-- **Instant looting** — loots every slot the moment loot is ready, before the loot window opens. Slots your group is rolling on are left alone.
-- **Junk selling** — sells all grey items when you open a vendor, without the confirmation popup.
-- **Gear repair** — repairs when you open a repair vendor and reports the cost. A repair you could not afford on arrival is retried once your junk money lands.
-- **Optional bind-on-pickup confirm** — auto-confirms BoP prompts while solo.
+- Fast Loot takes every item without showing the loot window. The window only appears when something needs you: a roll, a locked item, full bags or a bind on pickup prompt.
+- Spam-clicking or scroll-wheel looting never opens an empty loot window.
+- Sell Junk sells every grey item when you open a vendor, through Blizzard's own Sell All Junk.
+- Repair Gear repairs everything at a repair vendor, from guild funds if you allow it.
+- Buy Max Stack makes a right-click at a vendor buy a full stack instead of one.
+- Highlight Cheapest Item makes the stack in your bags worth the least glow, so you see what to sell or destroy first.
 
 ## Installation
 
-1. Copy the `FastLootSellRepair/` folder into the `Interface/AddOns/` folder of your WoW Forever install.
-2. Restart the game or `/reload`.
-3. Enable **Fast Loot Sell Repair** in the AddOns list.
+1. Install it with the CurseForge app under WoW Forever, or copy the `ItemFlow` folder into `World of Warcraft/_forever_/Interface/AddOns/`.
+2. Restart the game or type `/reload`.
+3. Enable ItemFlow in the AddOns list. Disable SpeedyAutoLoot or any other auto loot addon, because both would handle the same loot window.
+
+## Usage
+
+1. Turn on Auto Loot under Options, Controls, or hold the Auto Loot key while you loot.
+2. Open a vendor: junk sells and your gear repairs on their own.
+3. Tick Buy Max Stack at the top of the vendor window, then right-click what you want to buy.
+4. Open your bags: the orange glow marks your cheapest stack.
 
 ## Commands
 
-`/flsr` lists every setting and its state. `/flsr <name>` toggles one.
+| Command | Does |
+| --- | --- |
+| `/itemflow` | Opens the settings |
+| `/if` | Short form of `/itemflow` |
 
-| Name | Default | Effect |
+## Settings
+
+Open Options, AddOns, ItemFlow. Settings are saved per account.
+
+| Setting | What it does | Default |
 | --- | --- | --- |
-| `fastloot` | on | Loot instantly instead of waiting for the loot window |
-| `confirmbop` | off | Auto-confirm bind-on-pickup prompts while solo |
-| `selljunk` | on | Sell grey items when a vendor opens |
-| `repairgear` | on | Repair when a repair vendor opens |
-| `guildrepair` | off | Pay repairs from guild bank funds when allowed |
-
-Settings are saved per account.
+| Fast Loot | Takes every item at once without showing the loot window | On |
+| Confirm Bind on Pickup | Confirms bind on pickup loot for you while you play solo | Off |
+| Sell Junk | Sells your grey items when you open a vendor | On |
+| Repair Gear | Repairs your gear at a vendor who can repair | On |
+| Guild Repair | Pays repairs from guild funds when your guild allows it | Off |
+| Buy Max Stack | Right-clicking an item at a vendor buys a full stack | Off |
+| Highlight Cheapest Item | Makes the stack worth the least glow in your bags | On |
 
 ## Requirements
 
-WoW Forever 1.60.x (`## Interface: 16001`). Junk sells through Blizzard's sell-all-junk when the client offers it, and from your bags otherwise. Not yet run in game.
+WoW Forever 1.60.x (Interface `16001`). Auctionator is optional: without it the highlight uses vendor prices only.
 
-The Classic Era 1.15.x version lives on the `1.15.x-backup` branch.
+## Restrictions
+
+- The cheapest item is the stack worth the least, its price times its count. An item no vendor buys and Auctionator has no price for, such as a quest item, is never marked.
+- Buy Max Stack leaves items Blizzard asks you to confirm, such as those paid with other items or costing 150 gold or more, to its usual prompt.
+- Buy Max Stack buys what you can afford and what the vendor has in stock, up to one full stack.
+- Opening the settings in combat opens them once combat ends.
+
+## Credits
+
+The looting follows SpeedyAutoLoot by Yuyuli.
