@@ -11,9 +11,6 @@ local STUCK_ERRORS = {
   [ERR_LOOT_ROLL_PENDING] = true,
 }
 
--- One slot per tick, last slot first, as SpeedyAutoLoot does.
-local LOOT_TICK = 0.033
-
 -- A key bound to the keyring holds item family 256.
 local KEY_FAMILY = 256
 
@@ -24,7 +21,7 @@ hiddenParent:Hide()
 -- Edit Mode places the window on clients whose LootFrame has UpdateShownState.
 local hasEditMode = type(LootFrame.UpdateShownState) == "function"
 
-local isLooting, isHidden, lastNumLoot, lootFailure, initialAutoLoot, lootTicker = false, true, nil, false, false, nil
+local isLooting, isHidden, lastNumLoot, lootFailure, initialAutoLoot = false, true, nil, false, false
 
 -- A loot replacement that took LOOT_OPENED from Blizzard's window owns it, so the window is left alone.
 local function OwnsLootFrame()
@@ -124,23 +121,13 @@ local function LootOneSlot(slot)
   return false
 end
 
-local function CancelLootTicker()
-  if lootTicker then lootTicker:Cancel() end
-end
-
--- The last tick shows the window when a slot stayed behind.
+-- Every slot in the same frame, last first. SpeedyAutoLoot spaces them 33 ms apart, but the server answers each
+-- request on its own and a refused slot still comes back as a stuck error, so the spacing only delays the loot.
 local function StartLooting(numItems)
-  CancelLootTicker()
-  local slot = numItems
-  lootTicker = C_Timer.NewTicker(LOOT_TICK, function()
-    if slot >= 1 then
-      if not LootOneSlot(slot) then lootFailure = true end
-      slot = slot - 1
-    else
-      if lootFailure then ShowLootFrame() end
-      CancelLootTicker()
-    end
-  end, numItems + 1)
+  for slot = numItems, 1, -1 do
+    if not LootOneSlot(slot) then lootFailure = true end
+  end
+  if lootFailure then ShowLootFrame() end
 end
 
 -- A spammed interact can flip the isAutoLoot payload, so the first event of a loot decides. Empty and repeated
@@ -174,7 +161,6 @@ end
 
 local function OnLootClosed()
   isLooting, isHidden, lastNumLoot, lootFailure, initialAutoLoot = false, true, nil, false, false
-  CancelLootTicker()
   ParkLootFrame()
 end
 
