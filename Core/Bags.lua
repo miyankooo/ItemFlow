@@ -24,8 +24,12 @@ local function UnitValue(info)
   return auction
 end
 
--- Bag and slot of the cheapest stack. Nil when nothing has a price.
+local scannedAt, cheapestBag, cheapestSlot
+
+-- Bag and slot of the cheapest stack. Nil when nothing has a price. Every open bag window repaints in the same
+-- frame, so one scan serves them all.
 function ns.FindCheapest()
+  if scannedAt == GetTime() then return cheapestBag, cheapestSlot end
   local bestBag, bestSlot, bestValue
   for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS do
     for slot = 1, C_Container.GetContainerNumSlots(bag) do
@@ -39,6 +43,7 @@ function ns.FindCheapest()
       end
     end
   end
+  scannedAt, cheapestBag, cheapestSlot = GetTime(), bestBag, bestSlot
   return bestBag, bestSlot
 end
 

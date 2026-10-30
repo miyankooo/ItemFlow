@@ -53,7 +53,10 @@ local function Reset(opts)
     end,
     After = function(_, fn) timers[#timers + 1] = fn end,
   }
-  EventUtil = { ContinueOnPlayerLogin = function(fn) loginCallback = fn end }
+  EventUtil = {
+    ContinueOnPlayerLogin = function(fn) loginCallback = fn end,
+    ContinueOnAddOnLoaded = function(_, fn) fn() end,
+  }
 
   GetNumGroupMembers = function() return opts.group and 5 or 1 end
   GetCVarBool = function(cvar)
@@ -86,7 +89,7 @@ local function Reset(opts)
       return full and 0 or 10, 0
     end,
   }
-  C_ActionBar = {}
+  C_ActionBar = { ShouldShowKeyring = function() return true end }
 
   local ns = { db = { fastLoot = opts.fastLoot ~= false, confirmBop = opts.confirmBop or false } }
   assert(loadfile("Core/Loot.lua"))("ItemFlow", ns)
@@ -211,6 +214,14 @@ Check("bop off: popup back", UIParent.events.LOOT_BIND_CONFIRM)
 -- In a group the bind stays the player's decision.
 Reset({ confirmBop = true, group = true })
 Check("bop group: popup kept", UIParent.events.LOOT_BIND_CONFIRM)
+
+-- Group events decide even while the roster still reads the old size.
+Reset({ confirmBop = true })
+Fire("GROUP_JOINED")
+Check("bop joined: popup back before the roster", UIParent.events.LOOT_BIND_CONFIRM)
+GetNumGroupMembers = function() return 5 end
+Fire("GROUP_LEFT")
+Check("bop left: popup muted before the roster", not UIParent.events.LOOT_BIND_CONFIRM)
 
 print(failures == 0 and "FastLoot: all checks passed" or ("FastLoot: " .. failures .. " failed"))
 os.exit(failures == 0 and 0 or 1)

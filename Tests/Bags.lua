@@ -16,6 +16,7 @@ local function Find(items, withAuctionator)
   C_Item = { GetItemInfo = function(link) return nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, byLink[link][3] end }
   Auctionator = withAuctionator and { API = { v1 = { GetAuctionPriceByItemLink = function(_, link) return byLink[link][4] end } } } or nil
   EventUtil = { ContinueOnAddOnLoaded = function() end }
+  GetTime = function() return 0 end
   local ns = { db = {} }
   assert(loadfile("Core/Bags.lua"))("ItemFlow", ns)
   local _, slot = ns.FindCheapest()

@@ -1,4 +1,4 @@
-local _, ns = ...
+local addonName, ns = ...
 
 -- The looting follows SpeedyAutoLoot by Yuyuli, cut to what Forever runs. Blizzard's LootFrame lives under a
 -- hidden parent, so every loot opens invisibly, and the window comes back to UIParent only when the player has
@@ -79,9 +79,9 @@ local function ItemFits(itemLink, quantity)
   local stackCount, _, _, _, _, _, _, _, _, isCraftingReagent = select(8, C_Item.GetItemInfo(itemLink))
   local itemFamily = C_Item.GetItemFamily(itemLink)
 
-  if itemFamily == KEY_FAMILY then
-    local hasKeyring = IsKeyRingEnabled and IsKeyRingEnabled() or (C_ActionBar.ShouldShowKeyring and C_ActionBar.ShouldShowKeyring())
-    if hasKeyring and C_Container.GetContainerNumFreeSlots(Enum.BagIndex.Keyring) > 0 then return true end
+  if itemFamily == KEY_FAMILY and C_ActionBar.ShouldShowKeyring()
+    and C_Container.GetContainerNumFreeSlots(Enum.BagIndex.Keyring) > 0 then
+    return true
   end
 
   -- Item info can still be loading, so an unknown stack size skips the stack check.
@@ -180,12 +180,16 @@ end
 
 -- Blizzard's bind popup listens on UIParent. While solo with Confirm Bind on Pickup on, the addon confirms
 -- instead, so the popup never flashes.
-function ns.ApplyBindPopup()
-  if ConfirmsBind() then
-    UIParent:UnregisterEvent("LOOT_BIND_CONFIRM")
-  else
+local function SetBindPopup(shown)
+  if shown then
     UIParent:RegisterEvent("LOOT_BIND_CONFIRM")
+  else
+    UIParent:UnregisterEvent("LOOT_BIND_CONFIRM")
   end
+end
+
+function ns.ApplyBindPopup()
+  SetBindPopup(not ConfirmsBind())
 end
 
 ns.ApplyFastLoot = ParkLootFrame
@@ -218,14 +222,17 @@ events:SetScript("OnEvent", function(_, event, ...)
     OnBindConfirm(...)
   elseif event == "UI_ERROR_MESSAGE" then
     if STUCK_ERRORS[select(2, ...)] and isLooting and isHidden then ShowLootFrame(true) end
+
+  -- The roster can still read the old group size here, so the event decides, as in SpeedyAutoLoot.
+  elseif event == "GROUP_JOINED" then
+    SetBindPopup(true)
   else
-    ns.ApplyBindPopup()
+    SetBindPopup(not ns.db.confirmBop)
   end
 end)
 
--- Group events skip a /reload, so the popup state is set once at login. SpeedyAutoLoot parks the window a few
--- seconds after load, once the UI has placed it.
-EventUtil.ContinueOnPlayerLogin(function()
-  ns.ApplyBindPopup()
-  C_Timer.After(5, ParkLootFrame)
-end)
+-- Group events skip a /reload, so the popup state is set once at login.
+EventUtil.ContinueOnPlayerLogin(ns.ApplyBindPopup)
+
+-- SpeedyAutoLoot parks the window 6 seconds after its ADDON_LOADED, once the UI has placed it.
+EventUtil.ContinueOnAddOnLoaded(addonName, function() C_Timer.After(6, ParkLootFrame) end)
