@@ -10,7 +10,7 @@ ns.SETTINGS = {
   { key = "repairGear", default = true, label = "Repair Gear", tooltip = "Repairs your gear when you open a vendor who can repair." },
   { key = "guildRepair", default = false, label = "Guild Repair", tooltip = "Pays repairs from guild bank funds when your guild allows it. Your own money covers the rest.", parent = "repairGear" },
   { key = "buyMaxStack", default = false, label = "Buy Max Stack", tooltip = "Right-clicking an item at a vendor buys a full stack. The vendor window has the same checkbox." },
-  { key = "highlightCheapest", default = true, label = "Highlight Cheapest Item", tooltip = "Makes the stack in your bags worth the least glow, by the lower of its vendor and Auctionator price, so you see what to sell or destroy first.", onChange = function() ns.RefreshBagGlow() end },
+  { key = "highlightCheapest", default = true, label = "Highlight Cheapest Item", tooltip = "When your bags have 2 or fewer free slots, the stack worth the least glows, by the lower of its vendor price and an Auctionator price from the last 7 days, so you see what to sell or destroy first.", onChange = function() ns.RefreshBagGlow() end },
 }
 
 -- Modules read this table lazily, so it is safe that it stays empty until ADDON_LOADED.
