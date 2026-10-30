@@ -179,6 +179,7 @@ function ns.ApplyBindPopup()
 end
 
 ns.ApplyFastLoot = ParkLootFrame
+ns.ItemFits = ItemFits
 
 -- Edit Mode shows the window to move it. Leaving Edit Mode parks it again.
 if hasEditMode then

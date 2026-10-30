@@ -1,6 +1,6 @@
 # ItemFlow
 
-Loots everything at once, sells your junk and repairs your gear at vendors, buys full stacks with a right-click and marks the cheapest item in your bags.
+Loots everything at once, sells your junk and repairs your gear at vendors, buys full stacks with a right-click and marks the items to drop when loot will not fit.
 
 ## Features
 
@@ -9,7 +9,7 @@ Loots everything at once, sells your junk and repairs your gear at vendors, buys
 - Sell Junk sells every grey item when you open a vendor, through Blizzard's own Sell All Junk.
 - Repair Gear repairs everything at a repair vendor, from guild funds if you allow it.
 - Buy Max Stack makes a right-click at a vendor buy a full stack instead of one.
-- Highlight Cheapest Item makes the stack in your bags worth the least glow once your bags have 2 or fewer free slots, so you see what to sell or destroy first.
+- Mark Items to Drop pairs loot left behind for lack of room with your cheapest stacks and makes each stack worth less glow. With 2 or fewer free slots, the cheapest stack glows. Gray and white stacks get a red cross that deletes them in one click.
 
 ## Installation
 
@@ -22,7 +22,7 @@ Loots everything at once, sells your junk and repairs your gear at vendors, buys
 1. Turn on Auto Loot under Options, Controls, or hold the Auto Loot key while you loot.
 2. Open a vendor: junk sells and your gear repairs on their own.
 3. Tick Buy Max Stack at the top of the vendor window, then right-click what you want to buy.
-4. Fill your bags until 2 or fewer slots are free, then open them: the orange glow marks your cheapest stack.
+4. Loot with full bags, then open them: the orange glow marks what to drop, and the red cross deletes it.
 
 ## Commands
 
@@ -43,7 +43,7 @@ Open Options, AddOns, ItemFlow. Settings are saved per account.
 | Repair Gear | Repairs your gear at a vendor who can repair | On |
 | Guild Repair | Pays repairs from guild funds when your guild allows it | Off |
 | Buy Max Stack | Right-clicking an item at a vendor buys a full stack | Off |
-| Highlight Cheapest Item | Makes the stack worth the least glow when your bags are nearly full | On |
+| Mark Items to Drop | Marks the stacks worth less than loot that does not fit | On |
 
 ## Requirements
 
@@ -58,4 +58,4 @@ WoW Forever 1.60.x (Interface `16001`). Auctionator is optional: without it the 
 
 ## Credits
 
-The looting follows SpeedyAutoLoot by Yuyuli.
+The looting follows SpeedyAutoLoot by Yuyuli. Mark Items to Drop pairs loot with bag items the way LootTriage by Krelock does.
