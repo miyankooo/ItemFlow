@@ -4,13 +4,8 @@ Features, settings and credits are in `README.md`.
 
 ## Target
 
-- WoW Forever 1.60.x only, `## Interface: 16001`. No client branches, no `WOW_PROJECT_*`, no compat layer.
-- Verify every API against Gethe `wow-ui-source` and Ketho `BlizzardInterfaceResources`, branch `forever`. Forever loads the Mainline loot, merchant and bag files.
+- Forever loads the Mainline loot, merchant and bag files. Verify against those.
 - Renamed from FastLootSellRepair. Saved variables are `ItemFlowDB`.
-
-## Setup
-
-- Link the repo folder into `World of Warcraft/_forever_/Interface/AddOns/` with `ln -s`. Edit and commit here, never in the install.
 
 ## Rules
 
@@ -25,20 +20,15 @@ Features, settings and credits are in `README.md`.
 - Gray and white marked stacks get a delete button with the group loot Pass atlases (`lootroll-toast-icon-pass-*`). Its click picks the stack up and calls `DeleteCursorItem` in the same hardware event. It puts the stack back if the delete was refused. Better items never get it, since Blizzard asks before deleting them.
 - The glow copies the button's `NewItemTexture`: `bags-glow-orange`, OVERLAY sublevel 2, ADD, atlas size, centred, no pulse so it never reads as a new item.
 - The marks post-hook `UpdateItems` on every bag frame and loot events repaint open bags. They only toggle the addon's own texture and button. Never call Blizzard's bag update from addon code, or the bag buttons taint. The cheapest-item scan is cached per frame.
-- Settings use the native vertical layout with checkboxes only. No native dropdowns: they taint Blizzard's settings on build 70532.
+- Settings use the native vertical layout with checkboxes only.
 - The keyring check uses only `C_ActionBar.ShouldShowKeyring`. `IsKeyRingEnabled` is gone on Forever.
 - Left out on purpose: SpeedyAutoLoot's ElvUI and Loot Display support and its inventory-full sound.
-- Labels are Title Case. Tooltips and chat lines are sentences ending in a period.
-- The toc version stays 1.0.0 until the first CurseForge release.
-- Licence: MIT (LICENSE).
 
 ## Checks
 
-- Run `luac -p` on every Lua file and `lua Tests/FastLoot.lua`, `lua Tests/RepairOnce.lua`, `lua Tests/Buy.lua` and `lua Tests/Bags.lua` after a change.
-- `.github/workflows/release.yml` stays byte-identical to ChatScan's copy.
-- Turn on `/console scriptErrors 1` before testing in game. Disable SpeedyAutoLoot and LootTriage.
+- Run `lua Tests/FastLoot.lua`, `lua Tests/RepairOnce.lua`, `lua Tests/Buy.lua` and `lua Tests/Bags.lua` after a change.
+- Disable SpeedyAutoLoot and LootTriage before testing in game.
 
 ## Release
 
-1. Move the `## Unreleased` entries in `CHANGELOG.md` under the version, push `main` and tag `vX.Y.Z`.
-2. `.github/workflows/release.yml` packages it with the BigWigsMods packager. `.pkgmeta` keeps `CLAUDE.md`, `Tests` and `Tools` out of the package.
+- `.pkgmeta` also keeps `CLAUDE.md` out of the package.
