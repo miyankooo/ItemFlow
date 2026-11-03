@@ -1,25 +1,33 @@
 # ItemFlow
 
+Features, settings and credits are in `README.md`.
+
 ## Target
 
 - WoW Forever 1.60.x only, `## Interface: 16001`. No client branches, no `WOW_PROJECT_*`, no compat layer.
 - Verify every API against Gethe `wow-ui-source` and Ketho `BlizzardInterfaceResources`, branch `forever`. Forever loads the Mainline loot, merchant and bag files.
-- Renamed from FastLootSellRepair on 2026-10-22. Saved variables are `ItemFlowDB`.
+- Renamed from FastLootSellRepair. Saved variables are `ItemFlowDB`.
+
+## Setup
+
+- Link the repo folder into `World of Warcraft/_forever_/Interface/AddOns/` with `ln -s`. Edit and commit here, never in the install.
 
 ## Rules
 
-- Looting follows SpeedyAutoLoot by Yuyuli. `LootFrame` lives under a hidden parent from 6 s after `ADDON_LOADED` and after every `LOOT_CLOSED`, and comes back to UIParent only for manual loot, a slot left behind (lock, no bag room), a stuck error or a bind prompt. An empty or repeated `LOOT_READY` returns early, so a spammed interact never draws the window.
+- Looting follows SpeedyAutoLoot by Yuyuli. `LootFrame` lives under a hidden parent from 6 s after `ADDON_LOADED` and after every `LOOT_CLOSED`. It comes back to UIParent only for manual loot, a slot left behind (lock, no bag room), a stuck error or a bind prompt. An empty or repeated `LOOT_READY` returns early, so a spammed interact never draws the window.
 - The first `LOOT_READY` of a loot decides auto loot, with SpeedyAutoLoot's fallback `GetCVarBool("autoLootDefault") ~= IsModifiedClick("AUTOLOOTTOGGLE")`, because a spammed interact can flip the payload.
-- Slots loot last first, all in the frame of the first `LOOT_READY` (SpeedyAutoLoot spaces them 0.033 s apart, the owner wanted it faster on 2026-10-30), after SpeedyAutoLoot's bag room check, which lets only crafting reagents into the reagent bag. Quality never holds a slot back, also in a group: SpeedyAutoLoot ships `X-Family: [Family]` unreplaced, so its Classic-only roll threshold never runs on Forever, and the owner wants the same (2026-10-23). Blizzard's own `LOOT_OPENED` handler plays the fishing sound while the window is parked, so the addon plays none.
+- Slots loot last first, all in the frame of the first `LOOT_READY`, after SpeedyAutoLoot's bag room check, which lets only crafting reagents into the reagent bag. SpeedyAutoLoot spaces them 0.033 s apart. ItemFlow loots them in one frame on purpose. Quality never holds a slot back, also in a group: SpeedyAutoLoot ships `X-Family: [Family]` unreplaced, so its Classic-only roll threshold never runs on Forever. ItemFlow keeps it that way. Blizzard's own `LOOT_OPENED` handler plays the fishing sound (`FISHING_REEL_IN`) while the window is parked, so the addon plays none. Never add SpeedyAutoLoot's extra reel sound on top.
 - With Fast Loot off the window stays on UIParent and the addon does not loot.
-- Confirm Bind on Pickup while solo unregisters `LOOT_BIND_CONFIRM` from UIParent so Blizzard's popup never flashes, and registers it again in a group or when the setting is off. `GROUP_JOINED` and `GROUP_LEFT` set it from the event alone, as SpeedyAutoLoot does, because the roster can lag behind them.
-- Buy Max Stack post-hooks the global `MerchantItemButton_OnClick`, which the merchant buttons call by name, and tops Blizzard's one purchase up with `BuyMerchantItem` within `GetMerchantItemMaxStack`, money, supply and whole bundles. Items Blizzard confirms first are left alone.
+- Confirm Bind on Pickup while solo unregisters `LOOT_BIND_CONFIRM` from UIParent so Blizzard's popup never flashes. It registers it again in a group or when the setting is off. `GROUP_JOINED` and `GROUP_LEFT` set it from the event alone, as SpeedyAutoLoot does, because the roster can lag behind them.
+- Buy Max Stack post-hooks the global `MerchantItemButton_OnClick`, which the merchant buttons call by name. It tops Blizzard's one purchase up with `BuyMerchantItem` within `GetMerchantItemMaxStack`, money, supply and whole bundles. Items Blizzard confirms first are left alone.
 - The Buy Max Stack checkbox matches Forever's own checkboxes (Watch Faction in `Camelot/ReputationFrame.xml`): 26 px minimal art through `CheckboxWithLabelTemplate`, a `GameFontNormal` label 2 px to the right. It sits left of the merchant FilterDropdown, or in its place when `Enum.GameRule.MerchantFilterDisabled` hides it.
-- Mark Items to Drop (key `highlightCheapest`) follows LootTriage by Krelock, rewritten since it ships no licence: while loot is open, every loot item that `ns.ItemFits` refuses is paired by value, best first, with the cheapest priced stack in general bags after the free slots, and marks it when the loot is worth more. A quest item is always worth it. Without such loot, the cheapest stack is marked at 2 or fewer free slots. Prices ignore Auctionator values older than 7 days (`GetAuctionAgeByItemLink`).
-- Gray and white marked stacks get a delete button with the group loot Pass atlases (`lootroll-toast-icon-pass-*`). Its click picks the stack up and calls `DeleteCursorItem` in the same hardware event, and puts the stack back if the delete was refused. Better items never get it, since Blizzard asks before deleting them.
+- Mark Items to Drop (key `highlightCheapest`) follows LootTriage by Krelock, rewritten since it ships no licence: while loot is open, every loot item that `ns.ItemFits` refuses is paired by value, best first, with the cheapest priced stack in general bags after the free slots. It marks the stack when the loot is worth more. A quest item is always worth it. Without such loot, the cheapest stack is marked at 2 or fewer free slots. Prices ignore Auctionator values older than 7 days (`GetAuctionAgeByItemLink`).
+- Gray and white marked stacks get a delete button with the group loot Pass atlases (`lootroll-toast-icon-pass-*`). Its click picks the stack up and calls `DeleteCursorItem` in the same hardware event. It puts the stack back if the delete was refused. Better items never get it, since Blizzard asks before deleting them.
 - The glow copies the button's `NewItemTexture`: `bags-glow-orange`, OVERLAY sublevel 2, ADD, atlas size, centred, no pulse so it never reads as a new item.
-- The marks post-hook `UpdateItems` on every bag frame and loot events repaint open bags. They only toggle the addon's own texture and button. Never call Blizzard's bag update from addon code, or the bag buttons taint.
-- Settings use the native vertical layout with checkboxes only. No native dropdowns: they taint Blizzard's settings on build 70532 (2026-10-21).
+- The marks post-hook `UpdateItems` on every bag frame and loot events repaint open bags. They only toggle the addon's own texture and button. Never call Blizzard's bag update from addon code, or the bag buttons taint. The cheapest-item scan is cached per frame.
+- Settings use the native vertical layout with checkboxes only. No native dropdowns: they taint Blizzard's settings on build 70532.
+- The keyring check uses only `C_ActionBar.ShouldShowKeyring`. `IsKeyRingEnabled` is gone on Forever.
+- Left out on purpose: SpeedyAutoLoot's ElvUI and Loot Display support and its inventory-full sound.
 - Labels are Title Case. Tooltips and chat lines are sentences ending in a period.
 - The toc version stays 1.0.0 until the first CurseForge release.
 - Licence: MIT (LICENSE).
@@ -28,4 +36,9 @@
 
 - Run `luac -p` on every Lua file and `lua Tests/FastLoot.lua`, `lua Tests/RepairOnce.lua`, `lua Tests/Buy.lua` and `lua Tests/Bags.lua` after a change.
 - `.github/workflows/release.yml` stays byte-identical to ChatScan's copy.
-- Turn on `/console scriptErrors 1` before testing in game, and disable SpeedyAutoLoot.
+- Turn on `/console scriptErrors 1` before testing in game. Disable SpeedyAutoLoot and LootTriage.
+
+## Release
+
+1. Move the `## Unreleased` entries in `CHANGELOG.md` under the version, push `main` and tag `vX.Y.Z`.
+2. `.github/workflows/release.yml` packages it with the BigWigsMods packager. `.pkgmeta` keeps `CLAUDE.md`, `Tests` and `Tools` out of the package.
