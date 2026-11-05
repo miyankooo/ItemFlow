@@ -2,7 +2,7 @@
 ## Title: ItemFlow
 ## Notes: Loots everything at once, sells junk, repairs, buys full stacks and marks your cheapest item.
 ## Author: miyanko
-## Version: 1.0.0
+## Version: @project-version@
 ## Category: Inventory
 ## IconTexture: Interface\Icons\inv_misc_magnet
 ## SavedVariables: ItemFlowDB
