@@ -5,6 +5,7 @@
 ## Version: @project-version@
 ## Category: Inventory
 ## IconTexture: Interface\Icons\inv_misc_magnet
+## X-Curse-Project-ID: 1785988
 ## SavedVariables: ItemFlowDB
 ## OptionalDeps: Auctionator
 ## AddonCompartmentFunc: ItemFlow_CompartmentClick
