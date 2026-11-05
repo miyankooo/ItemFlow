@@ -1,5 +1,5 @@
 ## Interface: 16001
-## Title: ItemFlow
+## Title: Item Flow
 ## Notes: Loots everything at once, sells junk, repairs, buys full stacks and marks your cheapest item.
 ## Author: miyanko
 ## Version: @project-version@
