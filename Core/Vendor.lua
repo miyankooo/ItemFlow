@@ -8,9 +8,9 @@ local function IsBagExcluded(bag)
   return C_Container.GetBagSlotFlag(bag, Enum.BagSlotFlags.ExcludeJunkSell)
 end
 
--- Greys the vendor pays for. Locked slots are mid-move and cannot be sold yet. Count and total include whole stacks.
-local function FindJunk()
-  local junk, count, total = {}, 0, 0
+-- Greys the vendor pays for, counted for the sale line. Locked slots are mid-move and cannot be sold yet. Count and total include whole stacks.
+local function CountJunk()
+  local count, total = 0, 0
   for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
     if not IsBagExcluded(bag) then
       for slot = 1, C_Container.GetContainerNumSlots(bag) do
@@ -19,33 +19,26 @@ local function FindJunk()
           local sellPrice = select(11, C_Item.GetItemInfo(info.itemID)) or 0
           count = count + info.stackCount
           total = total + sellPrice * info.stackCount
-          junk[#junk + 1] = { bag = bag, slot = slot }
         end
       end
     end
   end
-  return junk, count, total
+  return count, total
 end
 
--- Uses Blizzard's sell-all-junk without its popup when offered, else the bags. The total is approximate if the client counts non-greys as junk.
+-- Blizzard's Sell All Junk without its popup. The vendor window shows that button only when IsSellAllJunkEnabled, so
+-- the same check keeps the line from claiming a sale. The total is approximate if the client counts non-greys as junk.
 local function SellJunk()
-  if not ns.db.sellJunk then
+  if not ns.db.sellJunk or not C_MerchantFrame.IsSellAllJunkEnabled() then
     return
   end
 
-  local junk, count, total = FindJunk()
-  if #junk == 0 then
+  local count, total = CountJunk()
+  if count == 0 then
     return
   end
 
-  if C_MerchantFrame.IsSellAllJunkEnabled() then
-    C_MerchantFrame.SellAllJunkItems()
-  else
-    for _, item in ipairs(junk) do
-      C_Container.UseContainerItem(item.bag, item.slot)
-    end
-  end
-
+  C_MerchantFrame.SellAllJunkItems()
   ns.Print(("Sold %d junk |4item:items; for %s."):format(count, C_CurrencyInfo.GetCoinTextureString(total)))
 end
 

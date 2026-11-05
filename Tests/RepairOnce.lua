@@ -8,13 +8,12 @@ local function Reset(opts)
     money = opts.money or 0,
     cost = opts.cost or 0,
     guildAllowed = opts.guildAllowed or false,
-    nativeJunk = opts.nativeJunk or false,
+    sellAllDisabled = opts.sellAllDisabled or false,
     greys = opts.greys or 0,
     stack = opts.stack or 1,
     excludedBag = opts.excludedBag,
     repairs = {},
-    sold = 0,
-    nativeSales = 0,
+    sales = 0,
     sounds = 0,
     lines = {},
     events = {},
@@ -24,7 +23,7 @@ local function Reset(opts)
   Enum = { ItemQuality = { Poor = 0 }, BagSlotFlags = { ExcludeJunkSell = 64 } }
   SOUNDKIT = { ITEM_REPAIR = 7994 }
 
-  -- Bags 0 and 1 hold the same greys, so a case can exclude one of them and see the other still sold.
+  -- Bags 0 and 1 hold the same greys, so a case can exclude one of them and see the other still counted.
   C_Container = {
     GetContainerNumSlots = function(bag) return bag <= 1 and 16 or 0 end,
     GetContainerItemInfo = function(bag, slot)
@@ -34,12 +33,11 @@ local function Reset(opts)
     end,
     GetBackpackSellJunkDisabled = function() return state.excludedBag == 0 end,
     GetBagSlotFlag = function(bag, flag) return flag == 64 and state.excludedBag == bag end,
-    UseContainerItem = function() state.sold = state.sold + 1 end,
   }
   C_Item = { GetItemInfo = function() return "Grey", nil, 0, 1, 1, "", "", 1, "", 0, 25 end }
   C_MerchantFrame = {
-    IsSellAllJunkEnabled = function() return state.nativeJunk end,
-    SellAllJunkItems = function() state.nativeSales = state.nativeSales + 1 end,
+    IsSellAllJunkEnabled = function() return not state.sellAllDisabled end,
+    SellAllJunkItems = function() state.sales = state.sales + 1 end,
   }
   C_CurrencyInfo = { GetCoinTextureString = function(amount) return amount .. "c" end }
 
@@ -94,7 +92,7 @@ Check("rich: no money watch", not state.events.PLAYER_MONEY)
 Check("rich: sale line", state.lines[1] == "Sold 6 junk |4item:items; for 150c.")
 Check("rich: repair line", state.lines[2] == "Repaired your gear for 300c.")
 Check("rich: two lines", #state.lines == 2)
-Check("rich: bag fallback sold six", state.sold == 6)
+Check("rich: one sale", state.sales == 1)
 
 -- Short of money until the second payout: the repair follows once, then the watch stops.
 Reset({ money = 100, cost = 300, greys = 6 })
@@ -130,28 +128,30 @@ Reset({ money = 1000, cost = 0 })
 Fire("MERCHANT_SHOW")
 Check("idle: silent", #state.lines == 0 and #state.repairs == 0)
 
--- Native sell-all-junk: one call, singular wording comes from the grammar escape.
-Reset({ money = 1000, cost = 0, greys = 1, nativeJunk = true })
+-- One grey: singular wording comes from the grammar escape.
+Reset({ money = 1000, cost = 0, greys = 1 })
 Fire("MERCHANT_SHOW")
-Check("native: one call", state.nativeSales == 1 and state.sold == 0)
-Check("native: line", state.lines[1] == "Sold 1 junk |4item:items; for 25c.")
+Check("single: line", state.lines[1] == "Sold 1 junk |4item:items; for 25c.")
+
+-- Without Blizzard's Sell All Junk nothing sells, so no line claims a sale.
+Reset({ money = 1000, cost = 0, greys = 2, sellAllDisabled = true })
+Fire("MERCHANT_SHOW")
+Check("sell all off: silent", state.sales == 0 and #state.lines == 0)
 
 -- Stacks count every item in them, for the line and the coins alike.
 Reset({ money = 1000, cost = 0, greys = 2, stack = 5 })
 Fire("MERCHANT_SHOW")
 Check("stacks: line", state.lines[1] == "Sold 10 junk |4item:items; for 250c.")
-Check("stacks: two slots sold", state.sold == 2)
 
--- A bag marked to ignore junk selling is neither sold from nor counted.
+-- Blizzard's sale skips a bag marked to ignore junk selling, so the line does not count it.
 Reset({ money = 1000, cost = 0, greys = 2, excludedBag = 1 })
 Fire("MERCHANT_SHOW")
 Check("excluded bag: line", state.lines[1] == "Sold 2 junk |4item:items; for 50c.")
-Check("excluded bag: only backpack sold", state.sold == 2)
 
 -- The same holds for the backpack, which has its own flag.
 Reset({ money = 1000, cost = 0, greys = 2, excludedBag = 0 })
 Fire("MERCHANT_SHOW")
-Check("excluded backpack: only bag sold", state.sold == 2 and state.lines[1] == "Sold 2 junk |4item:items; for 50c.")
+Check("excluded backpack: line", state.lines[1] == "Sold 2 junk |4item:items; for 50c.")
 
 if failures > 0 then
   os.exit(1)
