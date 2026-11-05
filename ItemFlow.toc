@@ -4,7 +4,7 @@
 ## Author: miyanko
 ## Version: 1.0.0
 ## Category: Inventory
-## IconTexture: Interface\Icons\INV_Misc_Bag_10
+## IconTexture: Interface\Icons\inv_misc_magnet
 ## SavedVariables: ItemFlowDB
 ## OptionalDeps: Auctionator
 ## AddonCompartmentFunc: ItemFlow_CompartmentClick
