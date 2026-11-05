@@ -32,11 +32,4 @@ local function LoadSettings()
   ns.db = ItemFlowDB
 end
 
-local configFrame = CreateFrame("Frame")
-configFrame:RegisterEvent("ADDON_LOADED")
-configFrame:SetScript("OnEvent", function(self, _, loadedAddon)
-  if loadedAddon == addonName then
-    LoadSettings()
-    self:UnregisterEvent("ADDON_LOADED")
-  end
-end)
+EventUtil.ContinueOnAddOnLoaded(addonName, LoadSettings)

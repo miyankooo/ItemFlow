@@ -20,7 +20,6 @@ local function NewFrame(parent, shown)
   function f:GetEffectiveScale() return 1 end
   function f:RegisterEvent(event) self.events[event] = true end
   function f:UnregisterEvent(event) self.events[event] = nil end
-  function f:IsEventRegistered(event) return self.events[event] == true end
   function f:SetScript(_, fn) handlers[#handlers + 1] = fn end
   return f
 end
@@ -40,7 +39,6 @@ local function Reset(opts)
   UIParent = NewFrame(nil, true)
   UIParent.events.LOOT_BIND_CONFIRM = true
   LootFrame = NewFrame(UIParent, false)
-  LootFrame.events.LOOT_OPENED = true
   CreateFrame = function(_, _, parent) return NewFrame(parent, true) end
   hooksecurefunc = function() end
 

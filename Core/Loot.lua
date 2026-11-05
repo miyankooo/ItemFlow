@@ -18,15 +18,7 @@ local hiddenParent = CreateFrame("Frame", nil, UIParent)
 hiddenParent:SetToplevel(true)
 hiddenParent:Hide()
 
--- Edit Mode places the window on clients whose LootFrame has UpdateShownState.
-local hasEditMode = type(LootFrame.UpdateShownState) == "function"
-
 local isLooting, isHidden, lastNumLoot, lootFailure, initialAutoLoot = false, true, nil, false, false
-
--- A loot replacement that took LOOT_OPENED from Blizzard's window owns it, so the window is left alone.
-local function OwnsLootFrame()
-  return LootFrame:IsEventRegistered("LOOT_OPENED")
-end
 
 -- The window opened under the hidden parent, so its open position is set again before it shows.
 local function AnchorLootFrame()
@@ -34,39 +26,25 @@ local function AnchorLootFrame()
   if GetCVarBool("lootUnderMouse") then
     local x, y = GetCursorPosition()
     frame:ClearAllPoints()
-    if hasEditMode then
-      x = x / frame:GetEffectiveScale() - 30
-      y = math.max(y / frame:GetEffectiveScale() + 50, 350)
-      frame:SetPoint("TOPLEFT", nil, "BOTTOMLEFT", x, y)
-    else
-      x = x / frame:GetEffectiveScale()
-      y = y / frame:GetEffectiveScale()
-      frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x - 40, y + 20)
-    end
+    x = x / frame:GetEffectiveScale() - 30
+    y = math.max(y / frame:GetEffectiveScale() + 50, 350)
+    frame:SetPoint("TOPLEFT", nil, "BOTTOMLEFT", x, y)
     frame:Raise()
-  elseif hasEditMode then
+  else
     local anchor, scale = frame.systemInfo.anchorInfo, frame:GetScale()
     frame:SetPoint(anchor.point, anchor.relativeTo, anchor.relativePoint, anchor.offsetX / scale, anchor.offsetY / scale)
-  else
-    frame:ClearAllPoints()
-    frame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 20, -125)
   end
 end
 
--- A delayed show comes after the window opened, so it anchors twice, as SpeedyAutoLoot does.
-local function ShowLootFrame(delayed)
+local function ShowLootFrame()
   isHidden = false
-  if OwnsLootFrame() then
-    LootFrame:SetParent(UIParent)
-    LootFrame:SetFrameStrata("HIGH")
-    AnchorLootFrame()
-    if delayed then AnchorLootFrame() end
-  end
+  LootFrame:SetParent(UIParent)
+  LootFrame:SetFrameStrata("HIGH")
+  AnchorLootFrame()
 end
 
 -- With Fast Loot off the window stays on UIParent like any other.
 local function ParkLootFrame()
-  if not OwnsLootFrame() then return end
   LootFrame:SetParent(ns.db.fastLoot and hiddenParent or UIParent)
 end
 
@@ -87,7 +65,7 @@ local function ItemFits(itemLink, quantity)
     return true
   end
 
-  for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS do
+  for bag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
     local freeSlots, bagFamily = C_Container.GetContainerNumFreeSlots(bag)
     if freeSlots > 0 then
       if bag == Enum.BagIndex.ReagentBag then
@@ -156,7 +134,7 @@ end
 local function OnBindConfirm(slot)
   if not (isLooting and LootSlotHasItem(slot)) then return end
   if ConfirmsBind() then ConfirmLootSlot(slot) end
-  if isHidden then ShowLootFrame(true) end
+  if isHidden then ShowLootFrame() end
 end
 
 local function OnLootClosed()
@@ -182,15 +160,13 @@ ns.ApplyFastLoot = ParkLootFrame
 ns.ItemFits = ItemFits
 
 -- Edit Mode shows the window to move it. Leaving Edit Mode parks it again.
-if hasEditMode then
-  hooksecurefunc(LootFrame, "UpdateShownState", function(frame)
-    if frame.isInEditMode or not ns.db.fastLoot then
-      frame:SetParent(UIParent)
-    else
-      frame:SetParent(hiddenParent)
-    end
-  end)
-end
+hooksecurefunc(LootFrame, "UpdateShownState", function(frame)
+  if frame.isInEditMode or not ns.db.fastLoot then
+    frame:SetParent(UIParent)
+  else
+    frame:SetParent(hiddenParent)
+  end
+end)
 
 local events = CreateFrame("Frame")
 events:RegisterEvent("LOOT_READY")
@@ -208,7 +184,7 @@ events:SetScript("OnEvent", function(_, event, ...)
   elseif event == "LOOT_BIND_CONFIRM" then
     OnBindConfirm(...)
   elseif event == "UI_ERROR_MESSAGE" then
-    if STUCK_ERRORS[select(2, ...)] and isLooting and isHidden then ShowLootFrame(true) end
+    if STUCK_ERRORS[select(2, ...)] and isLooting and isHidden then ShowLootFrame() end
 
   -- The roster can still read the old group size here, so the event decides, as in SpeedyAutoLoot.
   elseif event == "GROUP_JOINED" then

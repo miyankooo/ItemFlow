@@ -40,7 +40,7 @@ local function Marks(items, opts)
   CreateFrame = function()
     return { RegisterEvent = function() end, SetScript = function(_, _, fn) handlers[#handlers + 1] = fn end }
   end
-  EventUtil = { ContinueOnAddOnLoaded = function() end }
+  hooksecurefunc = function() end
   ContainerFrameCombinedBags = { IsShown = function() return false end }
   ContainerFrameContainer = { ContainerFrames = {} }
   GetTime = function() return 0 end

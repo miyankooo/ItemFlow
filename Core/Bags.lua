@@ -202,9 +202,7 @@ function ns.RefreshBagGlow()
   end)
 end
 
-EventUtil.ContinueOnAddOnLoaded("Blizzard_UIPanels_Game", function()
-  EachBagFrame(function(frame) hooksecurefunc(frame, "UpdateItems", Paint) end)
-end)
+EachBagFrame(function(frame) hooksecurefunc(frame, "UpdateItems", Paint) end)
 
 -- Loot changes which stacks are worth the room, so open bags repaint on every loot event.
 local lootEvents = CreateFrame("Frame")

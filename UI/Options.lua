@@ -55,9 +55,7 @@ SLASH_ITEMFLOW1, SLASH_ITEMFLOW2 = "/itemflow", "/if"
 SlashCmdList.ITEMFLOW = OpenSettings
 
 -- Addon Compartment entry points named in the toc. Blizzard calls them with the addon name first, then the menu row.
-function ItemFlow_CompartmentClick()
-  OpenSettings()
-end
+ItemFlow_CompartmentClick = OpenSettings
 
 function ItemFlow_CompartmentEnter(_, menuButton)
   GameTooltip:SetOwner(menuButton, "ANCHOR_LEFT")
@@ -71,6 +69,4 @@ function ItemFlow_CompartmentEnter(_, menuButton)
   GameTooltip:Show()
 end
 
-function ItemFlow_CompartmentLeave()
-  GameTooltip:Hide()
-end
+ItemFlow_CompartmentLeave = GameTooltip_Hide
