@@ -1,13 +1,12 @@
 ## Interface: 16001
 ## Title: Item Flow
-## Notes: Loots everything at once, sells junk, repairs, buys full stacks and marks your cheapest item.
+## Notes: Loots everything at once, sells junk, repairs and buys full stacks.
 ## Author: miyanko
 ## Version: @project-version@
 ## Category: Inventory
 ## IconTexture: Interface\Icons\inv_misc_magnet
 ## X-Curse-Project-ID: 1785988
 ## SavedVariables: ItemFlowDB
-## OptionalDeps: Auctionator
 ## AddonCompartmentFunc: ItemFlow_CompartmentClick
 ## AddonCompartmentFuncOnEnter: ItemFlow_CompartmentEnter
 ## AddonCompartmentFuncOnLeave: ItemFlow_CompartmentLeave
@@ -19,5 +18,4 @@ Core\Config.lua
 Core\Loot.lua
 Core\Vendor.lua
 Core\Buy.lua
-Core\Bags.lua
 UI\Options.lua

@@ -10,7 +10,6 @@ ns.SETTINGS = {
   { key = "repairGear", default = true, label = "Repair Gear", tooltip = "Repairs your gear when you open a vendor who can repair." },
   { key = "guildRepair", default = false, label = "Guild Repair", tooltip = "Pays repairs from guild bank funds when your guild allows it. Your own money covers the rest.", parent = "repairGear" },
   { key = "buyMaxStack", default = false, label = "Buy Max Stack", tooltip = "Right-clicking an item at a vendor buys a full stack. The vendor window has the same checkbox." },
-  { key = "highlightCheapest", default = true, label = "Mark Items to Drop", tooltip = "When loot stays behind for lack of room, your cheapest stacks worth less than that loot glow, one per loot item. With 2 or fewer free slots, the cheapest stack glows. Gray and white stacks get a red cross that deletes them. Values use the lower of the vendor price and an Auctionator price from the last 7 days.", onChange = function() ns.RefreshBagGlow() end },
 }
 
 -- Modules read this table lazily, so it is safe that it stays empty until ADDON_LOADED.

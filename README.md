@@ -2,7 +2,7 @@
 
 # Item Flow
 
-A WoW Forever addon that loots everything at once, sells your junk, repairs your gear and buys full stacks at vendors. When your bags fill up, it shows you what to drop.
+A WoW Forever addon that loots everything at once, sells your junk, repairs your gear and buys full stacks at vendors.
 
 ## Features
 
@@ -10,9 +10,7 @@ A WoW Forever addon that loots everything at once, sells your junk, repairs your
 - Sells your gray items at any vendor and tells you what they earned.
 - Repairs your gear at repair vendors, from guild funds if you like.
 - A right-click at a vendor buys a full stack instead of one item.
-- When loot does not fit, your cheapest stacks glow so you know what to drop. Gray and white ones get a one-click delete.
 - Can accept bind on pickup loot for you while you play solo.
-- Uses Auctionator's prices when it is installed.
 
 ## Usage
 
@@ -20,5 +18,4 @@ A WoW Forever addon that loots everything at once, sells your junk, repairs your
 2. Turn on Auto Loot in the game's Options under Controls.
 3. Open a vendor. Your junk sells and your gear repairs on their own.
 4. Tick Buy Max Stack at the top of the vendor window, then right-click what you want.
-5. When loot does not fit, open your bags. The glow marks what to drop.
-6. Type `/itemflow` or `/if`, or pick Item Flow in the addon menu, to turn each feature on or off.
+5. Type `/itemflow` or `/if`, or pick Item Flow in the addon menu, to turn each feature on or off.
