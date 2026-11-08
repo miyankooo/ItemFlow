@@ -1,4 +1,4 @@
-local _, ns = ...
+local addonName, ns = ...
 
 local categoryID
 
@@ -51,8 +51,38 @@ local function OpenSettings()
   Settings.OpenToCategory(categoryID)
 end
 
+-- The intro's settings link is a native addon hyperlink. Blizzard hands every click on one to all addons through
+-- EventRegistry's SetItemRef event (ItemRefHandlersShared.lua), so nothing is hooked. Gold is the colour of
+-- Blizzard's own action links in chat (ItemRef.lua).
+local LINK = LinkTypes.AddOn .. ":" .. addonName
+local SETTINGS_LINK = NORMAL_FONT_COLOR:WrapTextInColorCode(LinkUtil.FormatLink(LinkTypes.AddOn, "[" .. SETTINGS .. "]", addonName))
+
+-- Another addon's link can come from a line kept from restricted content, so it is checked before the comparison.
+EventRegistry:RegisterCallback("SetItemRef", function(_, link)
+  if ns.CanAccess(link) and link == LINK then OpenSettings() end
+end, ns)
+
+-- One chat line on the account's first login. The game ships with Auto Loot off, which leaves Fast Loot idle.
+local function PrintIntro()
+  local autoLoot = GetCVarBool("autoLootDefault") and "" or " Fast Loot needs Auto Loot on (Options, Controls)."
+  ns.Print("Loots fast, sells junk and repairs at vendors." .. autoLoot
+    .. " Open the " .. SETTINGS_LINK .. " or type /if to turn each feature on or off.")
+end
+
+EventUtil.ContinueOnPlayerLogin(function()
+  if ns.isFirstRun then PrintIntro() end
+end)
+
 SLASH_ITEMFLOW1, SLASH_ITEMFLOW2 = "/itemflow", "/if"
-SlashCmdList.ITEMFLOW = OpenSettings
+SlashCmdList.ITEMFLOW = function(message)
+  -- `/if intro` replays the first run: the intro line now and the Buy Max Stack tip at the vendor.
+  if strtrim(message):lower() == "intro" then
+    PrintIntro()
+    ns.ResetBuyMaxStackTip()
+  else
+    OpenSettings()
+  end
+end
 
 -- Addon Compartment entry points named in the toc. Blizzard calls them with the addon name first, then the menu row.
 ItemFlow_CompartmentClick = OpenSettings
