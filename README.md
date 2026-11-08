@@ -10,7 +10,6 @@ A WoW Forever addon that loots everything at once, sells your junk, repairs your
 - Sells your gray items at any vendor and tells you what they earned.
 - Repairs your gear at repair vendors, from guild funds if you like.
 - A right-click at a vendor buys a full stack instead of one item.
-- Can accept bind on pickup loot for you while you play solo.
 
 ## Usage
 

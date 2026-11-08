@@ -5,7 +5,6 @@ ns.title = C_AddOns.GetAddOnMetadata(addonName, "Title")
 -- One ordered list feeds the saved defaults and the settings page. A row with a parent greys out while that setting is off. onChange runs after the setting is saved.
 ns.SETTINGS = {
   { key = "fastLoot", default = true, label = "Fast Loot", tooltip = "Takes every item at once without showing the loot window. Needs Auto Loot on (Options, Controls), or hold the Auto Loot key.", onChange = function() ns.ApplyFastLoot() end },
-  { key = "confirmBop", default = false, label = "Confirm Bind on Pickup", tooltip = "Confirms bind on pickup loot for you while you play solo. In a group you still decide.", onChange = function() ns.ApplyBindPopup() end },
   { key = "sellJunk", default = true, label = "Sell Junk", tooltip = "Sells your grey items when you open a vendor." },
   { key = "repairGear", default = true, label = "Repair Gear", tooltip = "Repairs your gear when you open a vendor who can repair." },
   { key = "guildRepair", default = false, label = "Guild Repair", tooltip = "Pays repairs from guild bank funds when your guild allows it. Your own money covers the rest.", parent = "repairGear" },

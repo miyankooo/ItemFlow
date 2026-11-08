@@ -78,11 +78,6 @@ local function ItemFits(itemLink, quantity)
   return false
 end
 
--- Only auto-confirm while solo; in a group the bind is a decision for the player.
-local function ConfirmsBind()
-  return ns.db.confirmBop and not (GetNumGroupMembers() > 1)
-end
-
 -- False when the slot stays behind: locked or without room. Quality never holds a slot back, as in SpeedyAutoLoot
 -- on Forever, whose group roll threshold only runs on Classic clients.
 local function LootOneSlot(slot)
@@ -93,7 +88,6 @@ local function LootOneSlot(slot)
   if locked then return false end
   if slotType ~= Enum.LootSlotType.Item or ItemFits(GetLootSlotLink(slot), quantity) then
     LootSlot(slot)
-    if ConfirmsBind() then ConfirmLootSlot(slot) end
     return true
   end
   return false
@@ -131,29 +125,14 @@ local function OnLootReady(isAutoLoot)
   lastNumLoot = numItems
 end
 
+-- Blizzard's popup asks about a bind on pickup item, so the window shows with it.
 local function OnBindConfirm(slot)
-  if not (isLooting and LootSlotHasItem(slot)) then return end
-  if ConfirmsBind() then ConfirmLootSlot(slot) end
-  if isHidden then ShowLootFrame() end
+  if isLooting and isHidden and LootSlotHasItem(slot) then ShowLootFrame() end
 end
 
 local function OnLootClosed()
   isLooting, isHidden, lastNumLoot, lootFailure, initialAutoLoot = false, true, nil, false, false
   ParkLootFrame()
-end
-
--- Blizzard's bind popup listens on UIParent. While solo with Confirm Bind on Pickup on, the addon confirms
--- instead, so the popup never flashes.
-local function SetBindPopup(shown)
-  if shown then
-    UIParent:RegisterEvent("LOOT_BIND_CONFIRM")
-  else
-    UIParent:UnregisterEvent("LOOT_BIND_CONFIRM")
-  end
-end
-
-function ns.ApplyBindPopup()
-  SetBindPopup(not ConfirmsBind())
 end
 
 ns.ApplyFastLoot = ParkLootFrame
@@ -173,8 +152,6 @@ events:RegisterEvent("LOOT_OPENED")
 events:RegisterEvent("LOOT_CLOSED")
 events:RegisterEvent("LOOT_BIND_CONFIRM")
 events:RegisterEvent("UI_ERROR_MESSAGE")
-events:RegisterEvent("GROUP_JOINED")
-events:RegisterEvent("GROUP_LEFT")
 events:SetScript("OnEvent", function(_, event, ...)
   if event == "LOOT_READY" or event == "LOOT_OPENED" then
     OnLootReady(...)
@@ -182,19 +159,10 @@ events:SetScript("OnEvent", function(_, event, ...)
     OnLootClosed()
   elseif event == "LOOT_BIND_CONFIRM" then
     OnBindConfirm(...)
-  elseif event == "UI_ERROR_MESSAGE" then
-    if STUCK_ERRORS[select(2, ...)] and isLooting and isHidden then ShowLootFrame() end
-
-  -- The roster can still read the old group size here, so the event decides, as in SpeedyAutoLoot.
-  elseif event == "GROUP_JOINED" then
-    SetBindPopup(true)
-  else
-    SetBindPopup(not ns.db.confirmBop)
+  elseif STUCK_ERRORS[select(2, ...)] and isLooting and isHidden then
+    ShowLootFrame()
   end
 end)
-
--- Group events skip a /reload, so the popup state is set once at login.
-EventUtil.ContinueOnPlayerLogin(ns.ApplyBindPopup)
 
 -- SpeedyAutoLoot parks the window 6 seconds after its ADDON_LOADED, once the UI has placed it.
 EventUtil.ContinueOnAddOnLoaded(addonName, function() C_Timer.After(6, ParkLootFrame) end)

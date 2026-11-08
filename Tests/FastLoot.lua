@@ -1,7 +1,7 @@
 -- Offline check of Core/Loot.lua: the loot window stays parked under a hidden parent, a fast loot and an empty
 -- spammed loot never draw it, and loot left behind shows it. Run from the repo root with `lua Tests/FastLoot.lua`.
 
-local state, handlers, tickers, loginCallback, timers
+local state, handlers, tickers, timers
 
 -- Visible means shown with every parent shown, as in the client.
 local function NewFrame(parent, shown)
@@ -26,7 +26,7 @@ end
 
 -- Fresh game stubs per case. Each slot is { quality, locked, fits }.
 local function Reset(opts)
-  state = { slots = opts.slots or { {}, {}, {} }, looted = {}, confirmed = 0, drawn = false }
+  state = { slots = opts.slots or { {}, {}, {} }, looted = {}, drawn = false }
   handlers, tickers, timers = {}, {}, {}
 
   Enum = {
@@ -37,7 +37,6 @@ local function Reset(opts)
   BACKPACK_CONTAINER, NUM_BAG_SLOTS, NUM_TOTAL_EQUIPPED_BAG_SLOTS = 0, 4, 5
 
   UIParent = NewFrame(nil, true)
-  UIParent.events.LOOT_BIND_CONFIRM = true
   LootFrame = NewFrame(UIParent, false)
   CreateFrame = function(_, _, parent) return NewFrame(parent, true) end
   hooksecurefunc = function() end
@@ -51,10 +50,7 @@ local function Reset(opts)
     end,
     After = function(_, fn) timers[#timers + 1] = fn end,
   }
-  EventUtil = {
-    ContinueOnPlayerLogin = function(fn) loginCallback = fn end,
-    ContinueOnAddOnLoaded = function(_, fn) fn() end,
-  }
+  EventUtil = { ContinueOnAddOnLoaded = function(_, fn) fn() end }
 
   GetNumGroupMembers = function() return opts.group and 5 or 1 end
   GetCVarBool = function(cvar)
@@ -72,7 +68,6 @@ local function Reset(opts)
   end
   LootSlot = function(slot) state.looted[#state.looted + 1] = slot end
   LootSlotHasItem = function() return true end
-  ConfirmLootSlot = function() state.confirmed = state.confirmed + 1 end
 
   C_Item = {
     GetItemInfo = function()
@@ -89,11 +84,9 @@ local function Reset(opts)
   }
   C_ActionBar = { ShouldShowKeyring = function() return true end }
 
-  local ns = { db = { fastLoot = opts.fastLoot ~= false, confirmBop = opts.confirmBop or false } }
+  local ns = { db = { fastLoot = opts.fastLoot ~= false } }
   assert(loadfile("Core/Loot.lua"))("ItemFlow", ns)
-  loginCallback()
   for _, fn in ipairs(timers) do fn() end
-  return ns
 end
 
 -- Every registered handler sees the event; Blizzard's LootFrame shows itself on LOOT_OPENED. The client draws after every event.
@@ -199,27 +192,12 @@ Fire("LOOT_OPENED", true)
 Tick()
 Check("off: no looting", #state.looted == 0)
 
--- Confirm Bind on Pickup solo: the popup is muted and each looted slot confirmed.
-local ns = Reset({ confirmBop = true })
-Check("bop solo: popup muted", not UIParent.events.LOOT_BIND_CONFIRM)
+-- A bind on pickup item: Blizzard's popup asks while the slot is looted, and the window shows with it.
+Reset({ slots = { {} } })
 Fire("LOOT_READY", true)
-Tick()
-Check("bop solo: confirmed per slot", state.confirmed == 3)
-ns.db.confirmBop = false
-ns.ApplyBindPopup()
-Check("bop off: popup back", UIParent.events.LOOT_BIND_CONFIRM)
-
--- In a group the bind stays the player's decision.
-Reset({ confirmBop = true, group = true })
-Check("bop group: popup kept", UIParent.events.LOOT_BIND_CONFIRM)
-
--- Group events decide even while the roster still reads the old size.
-Reset({ confirmBop = true })
-Fire("GROUP_JOINED")
-Check("bop joined: popup back before the roster", UIParent.events.LOOT_BIND_CONFIRM)
-GetNumGroupMembers = function() return 5 end
-Fire("GROUP_LEFT")
-Check("bop left: popup muted before the roster", not UIParent.events.LOOT_BIND_CONFIRM)
+Fire("LOOT_BIND_CONFIRM", 1)
+Fire("LOOT_OPENED", true)
+Check("bind popup: the window shows", state.drawn)
 
 print(failures == 0 and "FastLoot: all checks passed" or ("FastLoot: " .. failures .. " failed"))
 os.exit(failures == 0 and 0 or 1)
