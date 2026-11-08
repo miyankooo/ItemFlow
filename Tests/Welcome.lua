@@ -12,13 +12,21 @@ local function noop() end
 -- Unknown methods (PascalCase, as the client's) do nothing; unknown fields stay nil.
 local MOCK = { __index = function(_, key) if type(key) == "string" and key:match("^%u") then return noop end end }
 
+-- SetPoint keeps the x offset per anchor point, so a check can read where a label or control starts.
+local function SetPoint(self, point, ...)
+  local args = { ... }
+  self.x = self.x or {}
+  self.x[point] = type(args[1]) == "number" and args[1] or args[3]
+end
+
 local function Region()
-  return setmetatable({ SetText = function(self, text) self.text = text end }, MOCK)
+  return setmetatable({ SetText = function(self, text) self.text = text end, SetPoint = SetPoint }, MOCK)
 end
 
 local function Frame(template)
   local f = setmetatable({ template = template, scripts = {} }, MOCK)
   f.SetScript = function(self, name, fn) self.scripts[name] = fn end
+  f.SetPoint = SetPoint
   f.CreateFontString = Region
   f.CreateTexture = Region
   f.Init = function(self, value, fill) self.checked, self.fillTooltip = value, fill end
@@ -183,6 +191,11 @@ Check("page: a canvas with the intro first",
 Check("page: one Blizzard settings checkbox per setting", #checkboxes == #ns.SETTINGS)
 local byKey = {}
 for index, entry in ipairs(ns.SETTINGS) do byKey[entry.key] = checkboxes[index] end
+local edge = true
+for _, checkbox in ipairs(checkboxes) do edge = edge and checkbox.x.LEFT == -40 end
+Check("page: every checkbox starts at the row's centre less 40", edge)
+Check("page: Guild Repair's label is indented 15",
+  byKey.guildRepair.parent.label.x.LEFT == 52 and byKey.repairGear.parent.label.x.LEFT == 37)
 byKey.sellJunk:Click()
 Check("page: a click saves the setting", ns.db.sellJunk == false)
 byKey.sellJunk.parent.scripts.OnMouseUp()

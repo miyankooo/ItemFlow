@@ -47,24 +47,29 @@ local function BuildPanel(introText, restoreDefaults)
   return panel
 end
 
--- One row below the intro, its label in GameFontNormal from x 37 to the row's centre less 85. A checkbox
--- (SettingsCheckboxTemplate) goes at the row's CENTER -80, a WowStyle1DropdownTemplate 220 wide at CENTER -48.
--- Within one page, controls share one left edge.
-local function AddRow(panel, index, label, fillTooltip)
-  local y = -INTRO_GAP - (index - 1) * (ROW_HEIGHT + ROW_SPACING)
+-- One row below the previous one, its label in GameFontNormal from x 37 (52 for a dependent row) to the row's centre
+-- less 85. Every control starts at the row's CENTER -40: a SettingsCheckboxTemplate, a WowStyle1DropdownTemplate
+-- 220 wide, or a MinimalSliderWithSteppersTemplate 250 wide and 3 up. `above` is panel.intro for the first row.
+local CONTROL_X, DEPENDENT_INDENT = -40, 15
+local function AddRow(panel, above, label, fillTooltip, dependent)
+  local gap = above == panel.intro and INTRO_GAP or ROW_SPACING
   local row = CreateFrame("Frame", nil, panel)
   row:SetHeight(ROW_HEIGHT)
-  row:SetPoint("TOPLEFT", panel.intro, "BOTTOMLEFT", -LABEL_X, y)
-  row:SetPoint("TOPRIGHT", panel.intro, "BOTTOMRIGHT", LABEL_X, y)
+  row:SetPoint("TOPLEFT", above, "BOTTOMLEFT", above == panel.intro and -LABEL_X or 0, -gap)
+  row:SetPoint("TOPRIGHT", above, "BOTTOMRIGHT", above == panel.intro and LABEL_X or 0, -gap)
   row:EnableMouse(true)
   AttachTooltip(row, fillTooltip)
-  local text = CreateText(row, GameFontNormal)
-  text:SetPoint("LEFT", LABEL_X, 0)
-  text:SetPoint("RIGHT", row, "CENTER", -85, 0)
-  text:SetText(label)
-  -- Kept so a dependent row can indent and grey out its label.
-  row.label = text
+  row.label = CreateText(row, GameFontNormal)
+  row.label:SetPoint("LEFT", LABEL_X + (dependent and DEPENDENT_INDENT or 0), 0)
+  row.label:SetPoint("RIGHT", row, "CENTER", -85, 0)
+  row.label:SetText(label)
   return row
+end
+
+-- A dependent row greys out while its parent option is off, as Blizzard's settings list does.
+local function SetRowEnabled(row, control, enabled)
+  row.label:SetTextColor((enabled and NORMAL_FONT_COLOR or GRAY_FONT_COLOR):GetRGB())
+  control:SetEnabled(enabled)
 end
 
 local function RegisterPanel(panel)
@@ -81,19 +86,12 @@ local INTRO = "Loots everything at once, sells your junk, repairs your gear and 
   .. "Junk sells through the vendor's own Sell All Junk, so bags set to ignore junk selling keep theirs. The game "
   .. "still asks before you loot a bind on pickup item or buy a costly one."
 
--- Blizzard's settings list indents a row that depends on another by 15 and greys it out while the other is off
--- (Blizzard_SettingControls.lua:1, 309-312, 359).
-local CHILD_INDENT = 15
-
 local checkboxes, rows = {}, {}
 
 local function UpdateEnabled()
   for _, entry in ipairs(ns.SETTINGS) do
     if entry.parent then
-      local enabled = ns.db[entry.parent] and true or false
-      checkboxes[entry.key]:SetEnabled(enabled)
-      rows[entry.key].label:SetTextColor((enabled and NORMAL_FONT_COLOR or GRAY_FONT_COLOR):GetRGB())
-      rows[entry.key]:DesaturateHierarchy(enabled and 0 or 1)
+      SetRowEnabled(rows[entry.key], checkboxes[entry.key], ns.db[entry.parent] and true or false)
     end
   end
 end
@@ -121,17 +119,15 @@ end
 
 -- The checkbox Blizzard's settings list builds for a checkbox row (SettingsCheckboxControlMixin), on the addon's own
 -- canvas. A click on the row ticks it and each change plays the list's sound, as there.
-local function AddCheckboxRow(panel, index, entry)
+local function AddCheckboxRow(panel, above, entry)
   local function FillTooltip(tooltip)
     GameTooltip_SetTitle(tooltip, entry.label)
     GameTooltip_AddNormalLine(tooltip, entry.tooltip)
   end
 
-  local row = AddRow(panel, index, entry.label, FillTooltip)
-  if entry.parent then row.label:SetPoint("LEFT", LABEL_X + CHILD_INDENT, 0) end
-
+  local row = AddRow(panel, above, entry.label, FillTooltip, entry.parent ~= nil)
   local checkbox = CreateFrame("CheckButton", nil, row, "SettingsCheckboxTemplate")
-  checkbox:SetPoint("LEFT", row, "CENTER", -80, 0)
+  checkbox:SetPoint("LEFT", row, "CENTER", CONTROL_X, 0)
   checkbox:Init(ns.db[entry.key], function() FillTooltip(SettingsTooltip) end)
   checkbox:RegisterCallback(SettingsCheckboxMixin.Event.OnValueChanged, function(_, checked)
     PlaySound(checked and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
@@ -142,11 +138,13 @@ local function AddCheckboxRow(panel, index, entry)
   end)
 
   checkboxes[entry.key], rows[entry.key] = checkbox, row
+  return row
 end
 
 EventUtil.ContinueOnPlayerLogin(function()
   local panel = BuildPanel(INTRO, RestoreDefaults)
-  for index, entry in ipairs(ns.SETTINGS) do AddCheckboxRow(panel, index, entry) end
+  local above = panel.intro
+  for _, entry in ipairs(ns.SETTINGS) do above = AddCheckboxRow(panel, above, entry) end
   UpdateEnabled()
   -- Blizzard calls a canvas's OnRefresh each time it shows the page (Blizzard_SettingsPanel.lua:7-11).
   panel.OnRefresh = Refresh
