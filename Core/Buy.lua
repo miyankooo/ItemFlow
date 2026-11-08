@@ -77,24 +77,41 @@ AttachTooltip(checkbox, function(tooltip)
   GameTooltip_AddNormalLine(tooltip, "Right-clicking an item buys a full stack.")
 end)
 
--- A first-visit HelpTip, the yellow callout Forever's Reputation and Currency tabs use, points at the label from
--- its right. It returns at every vendor until the player closes it or uses the checkbox, once per account.
-local TIP = {
-  text = "Tick Buy Max Stack, then right-click an item to buy a full stack.",
-  buttonStyle = HelpTip.ButtonStyle.Close,
-  targetPoint = HelpTip.Point.RightEdgeCenter,
-  onAcknowledgeCallback = function() ns.db.buyMaxStackTipSeen = true end,
-}
+-- Blizzard's yellow help tip, the one the Auction House uses for its undercut tip
+-- (Blizzard_AuctionHouseUI/Shared/Blizzard_AuctionHouseSellFrame.lua:507), as an own HelpTipTemplate frame on the
+-- target, never HelpTip:Show: that takes a frame from Blizzard's shared pool, and writing to the pool from addon code
+-- taints the help tips Blizzard shows later. It shows each time its target shows until the player closes it or uses
+-- the feature, then never again on the account, and hides with its target without being marked. relativeRegion is
+-- what the arrow points at, the target itself unless given.
+local function AttachTip(target, text, targetPoint, relativeRegion)
+  local tip
+  local info = {
+    text = text,
+    buttonStyle = HelpTip.ButtonStyle.Close,
+    targetPoint = targetPoint,
+    onAcknowledgeCallback = function() ns.db.buyMaxStackTipSeen = true end,
+  }
+  local function Show()
+    if ns.db.buyMaxStackTipSeen or (tip and tip:IsShown()) then return end
+    if not tip then
+      tip = CreateFrame("Frame", nil, target, "HelpTipTemplate")
+      tip.width = HelpTip.width
+      tip:SetWidth(tip.width)
+    end
+    -- HelpTip's pool resets a tip before each use (HelpTip.lua, HelpTipReset). An own frame would keep its last close
+    -- as acknowledged, so a tip shown again by /if intro would count as seen once its target hides.
+    tip:Reset()
+    tip:Init(target, info, relativeRegion or target)
+    tip:Show()
+  end
+  target:HookScript("OnShow", Show)
 
-local function ShowTip()
-  HelpTip:Show(checkbox, TIP, checkbox.Text)
+  -- When the player uses the feature.
+  local function Acknowledge()
+    if tip and tip.info then tip:Acknowledge() else ns.db.buyMaxStackTipSeen = true end
+  end
+  return Show, Acknowledge
 end
-
-checkbox:SetScript("OnClick", function(self)
-  ns.db.buyMaxStack = self:GetChecked()
-  PlaySound(ns.db.buyMaxStack and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
-  HelpTip:Acknowledge(checkbox, TIP.text)
-end)
 
 checkbox:SetScript("OnShow", function(self)
   -- The settings page can change the value between visits.
@@ -102,7 +119,17 @@ checkbox:SetScript("OnShow", function(self)
 
   -- Players who already use Buy Max Stack count as having seen the tip.
   if ns.db.buyMaxStackTipSeen == nil then ns.db.buyMaxStackTipSeen = ns.db.buyMaxStack end
-  if not ns.db.buyMaxStackTipSeen then ShowTip() end
+end)
+
+-- The tip points at the label from its right. It hooks OnShow, so it comes after the SetScript above, which would
+-- otherwise replace the hook.
+local ShowTip, AcknowledgeTip = AttachTip(checkbox, "Tick Buy Max Stack, then right-click an item to buy a full stack.",
+  HelpTip.Point.RightEdgeCenter, checkbox.Text)
+
+checkbox:SetScript("OnClick", function(self)
+  ns.db.buyMaxStack = self:GetChecked()
+  PlaySound(ns.db.buyMaxStack and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+  AcknowledgeTip()
 end)
 
 -- `/if intro` replays the tip: it shows now at an open vendor, or at the next one.

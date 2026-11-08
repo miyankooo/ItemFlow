@@ -1,7 +1,7 @@
 -- Offline check of Core/Buy.lua: a right-click tops Blizzard's one purchase up to a full stack, within money,
 -- supply and bundles, and leaves items Blizzard confirms first alone. Run from the repo root with `lua Tests/Buy.lua`.
 
-local topUp, bought, purchases, checkbox, shownTip, acknowledged
+local topUp, bought, purchases, checkbox, tip, pooled
 
 local function Frame(template)
   local f = { template = template, Text = {}, scripts = {} }
@@ -14,25 +14,65 @@ local function Frame(template)
   f.Text.GetStringWidth = function() return 80 end
   f.Text.GetUnboundedStringWidth = function() return 80 end
   f.SetScript = function(self, name, fn) self.scripts[name] = fn end
+  f.HookScript = function(self, name, fn)
+    local script = self.scripts[name]
+    self.scripts[name] = function(...)
+      if script then script(...) end
+      fn(...)
+    end
+  end
   f.GetChecked = function() return true end
   f.IsVisible = function() return true end
   return f
 end
 
+-- HelpTipTemplate as HelpTipTemplateMixin runs it: Close calls onAcknowledgeCallback only for an acknowledged tip,
+-- and only Reset clears that mark (HelpTip.lua).
+local function Tip(parent)
+  local t = { parent = parent, shown = false, acknowledged = false, inits = 0 }
+  function t:SetWidth(width) self.width = width end
+  function t:IsShown() return self.shown end
+  function t:Reset() self.info, self.acknowledged = nil, false end
+  function t:Init(_, info, relativeRegion)
+    self.info, self.relativeRegion, self.inits = info, relativeRegion, self.inits + 1
+  end
+  function t:Show() self.shown = true end
+  -- What the target hiding does to its child tip.
+  function t:Close()
+    local info = self.info
+    self.info, self.shown = nil, false
+    if info and self.acknowledged then info.onAcknowledgeCallback() end
+  end
+  -- What the close button does.
+  function t:Acknowledge()
+    self.acknowledged = true
+    self:Close()
+  end
+  return t
+end
+
 local function Reset(opts)
-  bought, shownTip, acknowledged = nil, nil, false
+  bought, tip, pooled = nil, nil, false
   MerchantFrame = { selectedTab = 1, FilterDropdown = Frame() }
   MERCHANT_HIGH_PRICE_COST = 1500000
   Enum = { GameRule = { MerchantFilterDisabled = 101 } }
   C_GameRules = { IsGameRuleActive = function() return false end }
   GameFontHighlight = "GameFontHighlight"
-  CreateFrame = function(_, _, _, template) checkbox = Frame(template) return checkbox end
+  CreateFrame = function(_, _, parent, template)
+    if template == "HelpTipTemplate" then
+      tip = Tip(parent)
+      return tip
+    end
+    checkbox = Frame(template)
+    return checkbox
+  end
   hooksecurefunc = function(_, fn) topUp = fn end
   HelpTip = {
     ButtonStyle = { Close = 1 },
     Point = { RightEdgeCenter = 1 },
-    Show = function(_, _, info) shownTip = info end,
-    Acknowledge = function() acknowledged = true end,
+    width = 226,
+    Show = function() pooled = true end,
+    Acknowledge = function() pooled = true end,
   }
   PlaySound = function() end
   GameTooltip_Hide = function() end
@@ -99,23 +139,40 @@ local function OpenVendor(opts)
 end
 
 local ns = OpenVendor({ on = false })
-Check("tip: shows on a first visit", shownTip ~= nil and ns.db.buyMaxStackTipSeen == false)
-shownTip.onAcknowledgeCallback()
-Check("tip: closing it marks it seen", ns.db.buyMaxStackTipSeen == true)
-shownTip = nil
+Check("tip: shows on a first visit", tip ~= nil and tip.shown and ns.db.buyMaxStackTipSeen == false)
+Check("tip: an own HelpTipTemplate on the checkbox, never Blizzard's pool",
+  tip.parent == checkbox and tip.width == 226 and not pooled)
+Check("tip: points at the label from its right", tip.relativeRegion == checkbox.Text and tip.info.targetPoint == 1)
+Check("tip: one sentence that names the control", tip.info.text == "Tick Buy Max Stack, then right-click an item to buy a full stack.")
+tip:Close()
+Check("tip: hides with the vendor without being marked", ns.db.buyMaxStackTipSeen == false)
 checkbox.scripts.OnShow(checkbox)
-Check("tip: a seen tip stays away", shownTip == nil)
+Check("tip: comes back at the next vendor", tip.shown)
+tip:Acknowledge()
+Check("tip: closing it marks it seen", ns.db.buyMaxStackTipSeen == true and not tip.shown)
+checkbox.scripts.OnShow(checkbox)
+Check("tip: a seen tip stays away", not tip.shown and tip.inits == 2)
 
 ns = OpenVendor({ on = true })
-Check("tip: players already using Buy Max Stack skip it", shownTip == nil and ns.db.buyMaxStackTipSeen == true)
+Check("tip: players already using Buy Max Stack skip it", tip == nil and ns.db.buyMaxStackTipSeen == true)
 
-OpenVendor({ on = false })
+ns = OpenVendor({ on = false })
 checkbox.scripts.OnClick(checkbox)
-Check("tip: using the checkbox closes it", acknowledged)
+Check("tip: using the checkbox closes it", ns.db.buyMaxStackTipSeen == true and not tip.shown and not pooled)
 
 ns = OpenVendor({ on = true })
 ns.ResetBuyMaxStackTip()
-Check("tip: /if intro shows it again at an open vendor", shownTip ~= nil and ns.db.buyMaxStackTipSeen == false)
+Check("tip: /if intro shows it again at an open vendor", tip ~= nil and tip.shown and ns.db.buyMaxStackTipSeen == false)
+
+ns = OpenVendor({ on = false })
+tip:Acknowledge()
+ns.ResetBuyMaxStackTip()
+tip:Close()
+Check("tip: after /if intro, closing the vendor does not mark it seen", ns.db.buyMaxStackTipSeen == false)
+
+ns = OpenVendor({ on = false })
+ns.ResetBuyMaxStackTip()
+Check("tip: /if intro leaves a tip on screen alone", tip.inits == 1)
 
 print(failures == 0 and "Buy: all checks passed" or ("Buy: " .. failures .. " failed"))
 os.exit(failures == 0 and 0 or 1)
