@@ -54,7 +54,8 @@ SlashCmdList.ITEMFLOW = function(message)
   if command == "" then
     ns.OpenSettings()
   elseif command == "help" or command == "?" then
-    ns.Print("Type /if for the settings, /if intro to see the welcome line and the Buy Max Stack tip again, or /if help for this list.")
+    ns.Print("Type /if for the settings, /if intro to see the welcome line and the tip again, "
+      .. "or /if help for this list.")
   elseif command == "intro" then
     ns.ReplayIntro()
   else

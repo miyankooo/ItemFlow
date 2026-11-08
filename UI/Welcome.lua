@@ -13,11 +13,12 @@ local function SurfaceLink(label)
   return NORMAL_FONT_COLOR:WrapTextInColorCode(LinkUtil.FormatLink(LinkTypes.AddOn, "[" .. label .. "]", addonName))
 end
 
--- The game ships with Auto Loot off, which leaves Fast Loot idle.
+-- What the addon does, where to change it, then the game option it needs, last. The game ships with Auto Loot off,
+-- which leaves Fast Loot idle, so the note shows only while it is off.
 function ns.PrintWelcome()
   local autoLoot = GetCVarBool("autoLootDefault") and "" or " Fast Loot needs Auto Loot on (Options, Controls)."
-  ns.Print("Loots fast, sells junk and repairs at vendors." .. autoLoot
-    .. " Open the " .. SurfaceLink(SETTINGS) .. " or type /if to turn each feature on or off.")
+  ns.Print("Loots fast, sells junk and repairs at vendors. Open the " .. SurfaceLink(SETTINGS)
+    .. " or type /if to turn each feature on or off." .. autoLoot)
 end
 
 -- `/if intro` replays the onboarding: the welcome line now, and the Buy Max Stack tip at its next chance.
