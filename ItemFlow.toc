@@ -11,11 +11,12 @@
 ## AddonCompartmentFuncOnEnter: ItemFlow_CompartmentEnter
 ## AddonCompartmentFuncOnLeave: ItemFlow_CompartmentLeave
 
-# Load order is the dependency order: Config owns the saved settings, then each feature module, and Options
-# builds the settings page, the slash command and the addon-menu entry on top of them.
+# Load order is the dependency order: Config owns the saved settings, then each feature module, Options builds the
+# settings page, the slash command and the addon-menu entry on top of them, and Welcome greets a new account.
 
 Core\Config.lua
 Core\Loot.lua
 Core\Vendor.lua
 Core\Buy.lua
 UI\Options.lua
+UI\Welcome.lua

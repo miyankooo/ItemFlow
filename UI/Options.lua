@@ -1,4 +1,4 @@
-local addonName, ns = ...
+local _, ns = ...
 
 local categoryID
 
@@ -28,74 +28,42 @@ end
 
 EventUtil.ContinueOnPlayerLogin(RegisterPanel)
 
+-- Opening in combat waits for combat to end, since the settings panel's open path has restrictions.
 local waitingForCombat = false
-
--- C_SettingsUtil.OpenSettingsPanel is flagged HasRestrictions, so a request in combat waits until combat ends, once however often it was asked.
-local function OpenSettings()
-  if not categoryID then
-    return
-  end
-
+function ns.OpenSettings()
+  if not categoryID then return end
   if InCombatLockdown() then
     ns.Print("Opens after combat.")
     if not waitingForCombat then
       waitingForCombat = true
       EventUtil.RegisterOnceFrameEventAndCallback("PLAYER_REGEN_ENABLED", function()
         waitingForCombat = false
-        OpenSettings()
+        ns.OpenSettings()
       end)
     end
     return
   end
-
   Settings.OpenToCategory(categoryID)
 end
 
--- The intro's settings link is a native addon hyperlink. Blizzard hands every click on one to all addons through
--- EventRegistry's SetItemRef event (ItemRefHandlersShared.lua), so nothing is hooked. Gold is the colour of
--- Blizzard's own action links in chat (ItemRef.lua).
-local LINK = LinkTypes.AddOn .. ":" .. addonName
-local SETTINGS_LINK = NORMAL_FONT_COLOR:WrapTextInColorCode(LinkUtil.FormatLink(LinkTypes.AddOn, "[" .. SETTINGS .. "]", addonName))
-
--- Another addon's link can come from a line kept from restricted content, so it is checked before the comparison.
-EventRegistry:RegisterCallback("SetItemRef", function(_, link)
-  if ns.CanAccess(link) and link == LINK then OpenSettings() end
-end, ns)
-
--- One chat line on the account's first login. The game ships with Auto Loot off, which leaves Fast Loot idle.
-local function PrintIntro()
-  local autoLoot = GetCVarBool("autoLootDefault") and "" or " Fast Loot needs Auto Loot on (Options, Controls)."
-  ns.Print("Loots fast, sells junk and repairs at vendors." .. autoLoot
-    .. " Open the " .. SETTINGS_LINK .. " or type /if to turn each feature on or off.")
-end
-
-EventUtil.ContinueOnPlayerLogin(function()
-  if ns.isFirstRun then PrintIntro() end
-end)
-
+-- One long command and one short alias. The bare command opens the main surface; help, intro and minimap
+-- (where there is a minimap button) are the shared words, and any other word prints the hint.
 SLASH_ITEMFLOW1, SLASH_ITEMFLOW2 = "/itemflow", "/if"
--- A bare /if opens the settings, the first word picks any other command.
 SlashCmdList.ITEMFLOW = function(message)
-  local command = strtrim(message):lower()
-
+  local command = strtrim(message or ""):lower()
   if command == "" then
-    OpenSettings()
-
-  -- Replays the first run: the intro line now and the Buy Max Stack tip at the vendor.
-  elseif command == "intro" then
-    PrintIntro()
-    ns.ResetBuyMaxStackTip()
-
+    ns.OpenSettings()
   elseif command == "help" or command == "?" then
     ns.Print("Type /if for the settings, /if intro to see the welcome line and the Buy Max Stack tip again, or /if help for this list.")
-
+  elseif command == "intro" then
+    ns.ReplayIntro()
   else
     ns.Print("Unknown command. Type /if help for the list.")
   end
 end
 
 -- Addon Compartment entry points named in the toc. Blizzard calls them with the addon name first, then the menu row.
-ItemFlow_CompartmentClick = OpenSettings
+ItemFlow_CompartmentClick = ns.OpenSettings
 
 function ItemFlow_CompartmentEnter(_, menuButton)
   GameTooltip:SetOwner(menuButton, "ANCHOR_LEFT")

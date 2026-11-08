@@ -30,8 +30,8 @@ function ns.Print(message)
 end
 
 local function LoadSettings()
-  -- No saved table yet means the account's first login with the addon, which gets the intro line.
-  ns.isFirstRun = ItemFlowDB == nil
+  -- No saved table yet means the account's first login with the addon, which gets the welcome line.
+  ns.firstRun = ItemFlowDB == nil
   ItemFlowDB = ItemFlowDB or {}
   for _, entry in ipairs(ns.SETTINGS) do
     if ItemFlowDB[entry.key] == nil then
