@@ -74,13 +74,23 @@ EventUtil.ContinueOnPlayerLogin(function()
 end)
 
 SLASH_ITEMFLOW1, SLASH_ITEMFLOW2 = "/itemflow", "/if"
+-- A bare /if opens the settings, the first word picks any other command.
 SlashCmdList.ITEMFLOW = function(message)
-  -- `/if intro` replays the first run: the intro line now and the Buy Max Stack tip at the vendor.
-  if strtrim(message):lower() == "intro" then
+  local command = strtrim(message):lower()
+
+  if command == "" then
+    OpenSettings()
+
+  -- Replays the first run: the intro line now and the Buy Max Stack tip at the vendor.
+  elseif command == "intro" then
     PrintIntro()
     ns.ResetBuyMaxStackTip()
+
+  elseif command == "help" or command == "?" then
+    ns.Print("Type /if for the settings, /if intro to see the welcome line and the Buy Max Stack tip again, or /if help for this list.")
+
   else
-    OpenSettings()
+    ns.Print("Unknown command. Type /if help for the list.")
   end
 end
 
