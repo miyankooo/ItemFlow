@@ -38,30 +38,44 @@ end
 
 hooksecurefunc("MerchantItemButton_OnClick", TopUp)
 
--- Forever's own checkboxes, like Watch Faction in Camelot/ReputationFrame.xml, are 26 px minimal checkboxes with a
--- GameFontNormal label 2 px to the right. CheckboxWithLabelTemplate carries the same art.
-local checkbox = CreateFrame("CheckButton", nil, MerchantFrame, "CheckboxWithLabelTemplate")
-checkbox:SetSize(26, 26)
-checkbox.Text:SetFontObject(GameFontNormal)
-checkbox.Text:ClearAllPoints()
-checkbox.Text:SetPoint("LEFT", checkbox, "RIGHT", 2, 0)
-checkbox.Text:SetText("Buy Max Stack")
+-- A GameTooltip owned by the hovered frame, filled with Blizzard's GameTooltip_* line helpers. A frame whose
+-- template already sets OnEnter gets HookScript instead.
+local function AttachTooltip(frame, fill, anchor)
+  frame:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, anchor or "ANCHOR_RIGHT")
+    fill(GameTooltip, self)
+    GameTooltip:Show()
+  end)
+  frame:SetScript("OnLeave", GameTooltip_Hide)
+end
 
--- The checkbox sits in the top bar, left of the filter dropdown, or in its place where a game rule hides it, as
--- MerchantFrame_Update does.
-local labelWidth = checkbox.Text:GetUnboundedStringWidth() + 2
+-- CheckboxWithLabelTemplate: the minimal art Blizzard's Settings use, at the 24 px AddonList gives it
+-- (Blizzard_AddOnList/AddonList.xml:73-74). The label joins the hit rect, so a click on it toggles the box.
+local function CreateCheckbox(parent, label)
+  local checkbox = CreateFrame("CheckButton", nil, parent, "CheckboxWithLabelTemplate")
+  checkbox:SetSize(24, 24)
+  checkbox.Text:SetFontObject(GameFontHighlight)
+  checkbox.Text:ClearAllPoints()
+  checkbox.Text:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
+  checkbox.Text:SetText(label)
+  checkbox:SetHitRectInsets(0, -(4 + checkbox.Text:GetStringWidth()), 0, 0)
+  return checkbox
+end
+
+local checkbox = CreateCheckbox(MerchantFrame, "Buy Max Stack")
+
+-- The checkbox sits in the top bar, its label 8 left of the filter dropdown, or in the dropdown's place where a game
+-- rule hides it, as MerchantFrame_Update does.
+local labelWidth = checkbox.Text:GetUnboundedStringWidth() + 4
 if C_GameRules.IsGameRuleActive(Enum.GameRule.MerchantFilterDisabled) then
   checkbox:SetPoint("RIGHT", MerchantFrame.FilterDropdown, "RIGHT", -labelWidth, 0)
 else
   checkbox:SetPoint("RIGHT", MerchantFrame.FilterDropdown, "LEFT", -(labelWidth + 8), 0)
 end
-checkbox:SetScript("OnEnter", function(self)
-  GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-  GameTooltip_SetTitle(GameTooltip, "Buy Max Stack")
-  GameTooltip_AddNormalLine(GameTooltip, "Right-clicking an item buys a full stack.")
-  GameTooltip:Show()
+AttachTooltip(checkbox, function(tooltip)
+  GameTooltip_SetTitle(tooltip, "Buy Max Stack")
+  GameTooltip_AddNormalLine(tooltip, "Right-clicking an item buys a full stack.")
 end)
-checkbox:SetScript("OnLeave", GameTooltip_Hide)
 
 -- A first-visit HelpTip, the yellow callout Forever's Reputation and Currency tabs use, points at the label from
 -- its right. It returns at every vendor until the player closes it or uses the checkbox, once per account.
