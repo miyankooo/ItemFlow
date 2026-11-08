@@ -2,20 +2,21 @@ local _, ns = ...
 
 -- A right-click buys one purchase through Blizzard's MerchantItemButton_OnClick, which the merchant buttons
 -- call by name. With Buy Max Stack on, a post-hook tops that purchase up to the item's max stack. Items Blizzard
--- asks about first, like extended costs and high prices, are left to its confirmation.
+-- asks about first, extended costs and high prices, are left to its confirmation. The non-refundable flag alone
+-- is no reason to stop: Forever marks every item with it and Blizzard still buys at once below the high price.
 local function TopUp(button, mouseButton)
   if not ns.db.buyMaxStack or mouseButton ~= "RightButton" or MerchantFrame.selectedTab ~= 1 then return end
-  if button.extendedCost or button.showNonrefundablePrompt
-    or (button.price and button.price >= MERCHANT_HIGH_PRICE_COST) then
-    return
-  end
+  if button.extendedCost or (button.price and button.price >= MERCHANT_HIGH_PRICE_COST) then return end
 
   local index = button:GetID()
   local info = C_MerchantFrame.GetItemInfo(index)
   if not (info and info.isPurchasable and info.stackCount > 0) then return end
 
+  -- A full stack is the item's own stack size. GetMerchantItemMaxStack is the most one purchase may hold.
+  local perPurchase = GetMerchantItemMaxStack(index)
+  local wanted = C_Item.GetItemMaxStackSizeByID(GetMerchantItemID(index)) or perPurchase
+
   -- The first purchase has not left the money yet, so the affordable count still includes it.
-  local wanted = GetMerchantItemMaxStack(index)
   if info.price > 0 then
     wanted = math.min(wanted, math.floor(GetMoney() / (info.price / info.stackCount)))
   end
@@ -24,9 +25,15 @@ local function TopUp(button, mouseButton)
   end
 
   -- Items sold in bundles are bought in whole bundles, as Blizzard's stack split does.
-  local extra = wanted - info.stackCount
-  extra = extra - extra % info.stackCount
-  if extra > 0 then BuyMerchantItem(index, extra) end
+  local bundle = info.stackCount
+  local extra = wanted - bundle
+  extra = extra - extra % bundle
+  perPurchase = math.max(perPurchase - perPurchase % bundle, bundle)
+  while extra > 0 do
+    local quantity = math.min(extra, perPurchase)
+    BuyMerchantItem(index, quantity)
+    extra = extra - quantity
+  end
 end
 
 hooksecurefunc("MerchantItemButton_OnClick", TopUp)

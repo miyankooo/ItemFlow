@@ -1,7 +1,7 @@
 -- Offline check of Core/Buy.lua: a right-click tops Blizzard's one purchase up to a full stack, within money,
 -- supply and bundles, and leaves items Blizzard confirms first alone. Run from the repo root with `lua Tests/Buy.lua`.
 
-local topUp, bought, checkbox, shownTip, acknowledged
+local topUp, bought, purchases, checkbox, shownTip, acknowledged
 
 local function Frame()
   local f = { Text = {}, scripts = {} }
@@ -31,16 +31,23 @@ local function Reset(opts)
   PlaySound = function() end
   SOUNDKIT = {}
   C_MerchantFrame = { GetItemInfo = function() return opts.info end }
-  GetMerchantItemMaxStack = function() return opts.maxStack or 20 end
+  GetMerchantItemMaxStack = function() return opts.perPurchase or opts.maxStack or 20 end
+  GetMerchantItemID = function() return 159 end
+  C_Item = { GetItemMaxStackSizeByID = function() return opts.maxStack or 20 end }
   GetMoney = function() return opts.money or 100000 end
-  BuyMerchantItem = function(_, quantity) bought = quantity end
+  purchases = {}
+  BuyMerchantItem = function(_, quantity)
+    purchases[#purchases + 1] = quantity
+    bought = (bought or 0) + quantity
+  end
   local ns = { db = { buyMaxStack = opts.on ~= false, buyMaxStackTipSeen = opts.tipSeen } }
   assert(loadfile("Core/Buy.lua"))("ItemFlow", ns)
   return ns
 end
 
 local function Click(opts, mouseButton)
-  topUp({ GetID = function() return 1 end, price = opts.info.price, extendedCost = opts.extendedCost }, mouseButton or "RightButton")
+  topUp({ GetID = function() return 1 end, price = opts.info.price, extendedCost = opts.extendedCost,
+    showNonrefundablePrompt = opts.nonrefundable }, mouseButton or "RightButton")
 end
 
 local failures = 0
@@ -63,6 +70,9 @@ Check("money caps the stack", Case({ money = 550 }) == 4)
 Check("supply caps the stack", Case({ info = { price = 100, stackCount = 1, numAvailable = 3, isPurchasable = true } }) == 2)
 Check("bundles stay whole", Case({ maxStack = 200, info = { price = 100, stackCount = 5, numAvailable = -1, isPurchasable = true } }) == 195)
 Check("a full bundle buys nothing more", Case({ maxStack = 200, info = { price = 100, stackCount = 200, numAvailable = -1, isPurchasable = true } }) == nil)
+Check("non-refundable items still top up", Case({ nonrefundable = true }) == 19)
+Check("the item's stack size wins over one purchase", Case({ maxStack = 200, perPurchase = 20 }) == 199 and #purchases == 10)
+Check("bundles stay whole across purchases", Case({ maxStack = 200, perPurchase = 22, info = { price = 100, stackCount = 5, numAvailable = -1, isPurchasable = true } }) == 195 and purchases[1] == 20)
 Check("confirmed items are left to Blizzard", Case({ extendedCost = true }) == nil)
 Check("high prices are left to Blizzard", Case({ info = { price = 2000000, stackCount = 1, numAvailable = -1, isPurchasable = true }, money = 1e9 }) == nil)
 
