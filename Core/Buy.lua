@@ -55,10 +55,37 @@ checkbox:SetScript("OnEnter", function(self)
   GameTooltip:Show()
 end)
 checkbox:SetScript("OnLeave", GameTooltip_Hide)
+
+-- A first-visit HelpTip, the yellow callout Forever's Reputation and Currency tabs use, points at the label from
+-- its right. It returns at every vendor until the player closes it or uses the checkbox, once per account.
+local TIP = {
+  text = "Tick Buy Max Stack, then right-click an item to buy a full stack.",
+  buttonStyle = HelpTip.ButtonStyle.Close,
+  targetPoint = HelpTip.Point.RightEdgeCenter,
+  onAcknowledgeCallback = function() ns.db.buyMaxStackTipSeen = true end,
+}
+
+local function ShowTip()
+  HelpTip:Show(checkbox, TIP, checkbox.Text)
+end
+
 checkbox:SetScript("OnClick", function(self)
   ns.db.buyMaxStack = self:GetChecked()
   PlaySound(ns.db.buyMaxStack and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+  HelpTip:Acknowledge(checkbox, TIP.text)
 end)
 
--- The settings page can change the value between visits.
-checkbox:SetScript("OnShow", function(self) self:SetChecked(ns.db.buyMaxStack) end)
+checkbox:SetScript("OnShow", function(self)
+  -- The settings page can change the value between visits.
+  self:SetChecked(ns.db.buyMaxStack)
+
+  -- Players who already use Buy Max Stack count as having seen the tip.
+  if ns.db.buyMaxStackTipSeen == nil then ns.db.buyMaxStackTipSeen = ns.db.buyMaxStack end
+  if not ns.db.buyMaxStackTipSeen then ShowTip() end
+end)
+
+-- `/if intro` replays the tip: it shows now at an open vendor, or at the next one.
+function ns.ResetBuyMaxStackTip()
+  ns.db.buyMaxStackTipSeen = false
+  if checkbox:IsVisible() then ShowTip() end
+end
