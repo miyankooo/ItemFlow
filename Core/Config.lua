@@ -23,10 +23,10 @@ end
 -- Modules read this table lazily, so it is safe that it stays empty until ADDON_LOADED.
 ns.db = {}
 
-local PREFIX = YELLOW_FONT_COLOR:WrapTextInColorCode("[" .. ns.title .. "]:") .. " "
-
+-- Every chat line reads "[Item Flow]: Sentence.", the bracketed title in the gold of Blizzard's own chat links
+-- (ItemRef.lua), the rest in the chat frame's colour.
 function ns.Print(message)
-  print(PREFIX .. message)
+  print(NORMAL_FONT_COLOR:WrapTextInColorCode("[" .. ns.title .. "]") .. ": " .. message)
 end
 
 local function LoadSettings()
