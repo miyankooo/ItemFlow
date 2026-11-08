@@ -195,9 +195,15 @@ function ItemFlow_CompartmentEnter(_, menuButton)
   GameTooltip:SetOwner(menuButton, "ANCHOR_LEFT")
   GameTooltip_SetTitle(GameTooltip, ns.title)
 
+  -- The current state: each feature and whether it is on.
+  for _, entry in ipairs(ns.SETTINGS) do
+    GameTooltip_AddColoredDoubleLine(GameTooltip, entry.label,
+      ns.db[entry.key] and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED, HIGHLIGHT_FONT_COLOR, HIGHLIGHT_FONT_COLOR)
+  end
+
   -- The game's Auto Loot is off by default, which leaves Fast Loot idle without any other hint.
   if ns.db.fastLoot and not GetCVarBool("autoLootDefault") then
-    GameTooltip_AddHighlightLine(GameTooltip, "Auto Loot is off, so Fast Loot waits for the Auto Loot key.")
+    GameTooltip_AddNormalLine(GameTooltip, "Auto Loot is off, so Fast Loot waits for the Auto Loot key.")
   end
   GameTooltip_AddInstructionLine(GameTooltip, "Click to open the settings.")
   GameTooltip:Show()
