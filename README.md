@@ -18,3 +18,5 @@ A WoW Forever addon that loots everything at once, sells your junk, repairs your
 3. Open a vendor. Your junk sells and your gear repairs on their own.
 4. Tick Buy Max Stack at the top of the vendor window, then right-click what you want.
 5. Type `/itemflow` or `/if`, or pick Item Flow in the addon menu, to turn each feature on or off.
+
+Commands: `/if`, `/if intro` and `/if help`.
